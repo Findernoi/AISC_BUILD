@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { User } from '@supabase/supabase-js';
 import {
   Language,
   PortalRole,
@@ -16,8 +17,14 @@ import {
   INITIAL_CANDIDATES,
   I18N,
 } from '../data/mockData';
+import { getSupabaseClient, isSupabaseConfigured, supabase } from '../lib/supabase';
 
 interface AppContextType {
+  authUser: User | null;
+  authReady: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<boolean>;
+  signOut: () => Promise<void>;
   lang: Language;
   setLang: (lang: Language) => void;
   role: PortalRole;
@@ -49,6 +56,8 @@ const STORAGE_KEY = 'talentmatch_ai_state_v2';
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
   const [lang, setLang] = useState<Language>('vi');
   const [role, setRole] = useState<PortalRole>('hr');
   const [activeCandidateId, setActiveCandidateId] = useState<string>('cand-001');
@@ -59,6 +68,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     hrWeight: 30,
   });
   const [isAiScreeningLoading, setIsAiScreeningLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    let mounted = true;
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+
+    void supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (mounted) {
+          setAuthUser(data.session?.user ?? null);
+          setAuthReady(true);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Unable to restore Supabase session:', error);
+        if (mounted) setAuthReady(true);
+      });
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { data, error } = await getSupabaseClient().auth.signUp({ email, password });
+    if (error) throw error;
+    return !data.session;
+  };
+
+  const signOut = async () => {
+    const { error } = await getSupabaseClient().auth.signOut();
+    if (error) throw error;
+  };
 
   const [jobs, setJobs] = useState<JobPosting[]>(() => {
     try {
@@ -245,6 +298,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        authUser,
+        authReady,
+        signIn,
+        signUp,
+        signOut,
         lang,
         setLang,
         role,

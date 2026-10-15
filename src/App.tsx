@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthScreen } from './components/AuthScreen';
 import { Navbar } from './components/Navbar';
 import { JobCatalog } from './components/candidate/JobCatalog';
 import { CandidateTracker } from './components/candidate/CandidateTracker';
@@ -11,7 +12,7 @@ import { DecisionCenter } from './components/hr/DecisionCenter';
 import { JobManager } from './components/hr/JobManager';
 
 const AppContent: React.FC = () => {
-  const { role, lang, setActiveCandidateId } = useApp();
+  const { authUser, authReady, role, lang, setActiveCandidateId } = useApp();
   const [currentTab, setCurrentTab] = useState<string>(role === 'candidate' ? 'jobs' : 'pipeline');
 
   // Keep currentTab synchronized if role changes
@@ -26,6 +27,18 @@ const AppContent: React.FC = () => {
       }
     }
   }, [role, currentTab]);
+
+  if (!authReady) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center text-sm text-slate-400">
+        {lang === 'vi' ? 'Đang kiểm tra phiên đăng nhập...' : 'Checking your session...'}
+      </main>
+    );
+  }
+
+  if (!authUser) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">

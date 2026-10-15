@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI, Type } from '@google/genai';
 
 dotenv.config();
@@ -11,6 +12,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin =
+  supabaseUrl && supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      })
+    : null;
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -118,6 +134,31 @@ function evaluateCodeFallback(code: string, problem: any, testsPassed: number, t
       ? (lang === 'vi' ? 'Mã nguồn đạt tiêu chuẩn kỹ thuật cao, sẵn sàng cho vòng phỏng vấn kỹ thuật trực tiếp.' : 'Code meets high engineering standards, ready for technical interview.')
       : (lang === 'vi' ? 'Mã nguồn đạt yêu cầu cơ bản, cần trao đổi sâu hơn về tư duy tối ưu giải thuật.' : 'Meets baseline requirements, discuss algorithmic optimization during live interview.'),
   };
+}
+
+function getBearerToken(req: Request): string | null {
+  const authHeader = req.headers.authorization || '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1] : null;
+}
+
+async function getAuthenticatedUser(req: Request) {
+  if (!supabaseAdmin) {
+    return null;
+  }
+
+  const token = getBearerToken(req);
+  if (!token) {
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+
+  if (error || !data.user) {
+    return null;
+  }
+
+  return data.user;
 }
 
 // Endpoint: AI Resume Screening
@@ -280,7 +321,34 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     geminiEnabled: Boolean(ai),
+    supabaseConfigured: Boolean(supabaseUrl && (supabaseAnonKey || supabaseServiceRoleKey)),
     timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/api/auth/me', async (req: Request, res: Response) => {
+  if (!supabaseAdmin) {
+    res.status(503).json({
+      error: 'Supabase is not configured on the server. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+    });
+    return;
+  }
+
+  const user = await getAuthenticatedUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'Unauthorized: missing or invalid Bearer token.' });
+    return;
+  }
+
+  res.json({ user });
+});
+
+app.get('/api/auth/config', (req: Request, res: Response) => {
+  res.json({
+    configured: Boolean(supabaseUrl && (supabaseAnonKey || supabaseServiceRoleKey)),
+    url: supabaseUrl || null,
+    anonKeyConfigured: Boolean(supabaseAnonKey),
+    serviceRoleConfigured: Boolean(supabaseServiceRoleKey),
   });
 });
 

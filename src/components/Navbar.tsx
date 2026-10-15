@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Sparkles, Briefcase, User, RotateCcw, Globe } from 'lucide-react';
+import { Sparkles, Briefcase, User, RotateCcw, Globe, LogOut } from 'lucide-react';
 
 interface NavbarProps {
   currentTab: string;
@@ -8,7 +8,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => {
-  const { lang, setLang, role, setRole, t, resetData } = useApp();
+  const { authUser, lang, setLang, role, setRole, t, resetData, signOut } = useApp();
 
   return (
     <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
@@ -163,6 +163,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           >
             <Globe className="w-3.5 h-3.5 text-slate-400" />
             <span className="font-semibold uppercase">{lang}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              void signOut().catch((error: unknown) => {
+                console.error('Supabase sign out failed:', error);
+                window.alert(
+                  error instanceof Error
+                    ? error.message
+                    : lang === 'vi' ? 'Không thể đăng xuất. Vui lòng thử lại.' : 'Unable to sign out. Please try again.'
+                );
+              });
+            }}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:border-slate-700 hover:text-white"
+            title={authUser?.email || (lang === 'vi' ? 'Đăng xuất' : 'Sign out')}
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{lang === 'vi' ? 'Đăng xuất' : 'Sign out'}</span>
           </button>
 
           {/* Reset Demo Data Button */}
