@@ -1,0 +1,6 @@
+{
+  "name": "TalentMatch AI — Nền Tảng Tuyển Dụng & Sàng Lọc AI",
+  "description": "Nền tảng tuyển dụng và sàng lọc ứng viên thông minh tích hợp AI resume screening, bài test lập trình trực tiếp, HR scorecard và decision center xếp hạng ứng viên.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

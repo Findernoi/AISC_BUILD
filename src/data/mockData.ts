@@ -1,0 +1,748 @@
+import { JobPosting, Candidate, CodingChallenge } from '../types';
+
+export const INITIAL_JOBS: JobPosting[] = [
+  {
+    id: 'job-ai-intern',
+    title: 'AI Engineering Intern (LLM & Computer Vision)',
+    department: 'AI & Data Innovation Lab',
+    location: 'TP. Hồ Chí Minh / Hybrid',
+    type: 'Internship',
+    description: 'Tham gia nghiên cứu, tinh chỉnh và triển khai các mô hình ngôn ngữ lớn (LLM), kỹ thuật RAG và thị giác máy tính vào sản phẩm thương mại quy mô triệu người dùng.',
+    requirements: ['Python', 'PyTorch / TensorFlow', 'LangChain / LlamaIndex', 'RAG Architecture', 'FastAPI', 'Docker'],
+    minGpa: 3.2,
+    englishRequirement: 'IELTS 6.5+ hoặc TOEIC 750+',
+    codingChallengeId: 'challenge-rag-tokens',
+    status: 'active',
+    applicantCount: 24,
+    createdAt: '2026-10-01',
+  },
+  {
+    id: 'job-fe-intern',
+    title: 'Frontend Developer Intern (React & TypeScript)',
+    department: 'Product Experience Engineering',
+    location: 'TP. Hồ Chí Minh / On-site',
+    type: 'Internship',
+    description: 'Xây dựng giao diện ứng dụng web hiện đại, tốc độ cao với React 19, TypeScript và Tailwind CSS. Phối hợp chặt chẽ với UI/UX designers và backend engineers.',
+    requirements: ['React / Next.js', 'TypeScript', 'Tailwind CSS', 'State Management', 'REST / GraphQL', 'Git'],
+    minGpa: 3.0,
+    englishRequirement: 'Giao tiếp kỹ thuật tốt (IELTS 6.0+ hoặc tương đương)',
+    codingChallengeId: 'challenge-dedup-stream',
+    status: 'active',
+    applicantCount: 38,
+    createdAt: '2026-10-05',
+  },
+  {
+    id: 'job-backend-intern',
+    title: 'Backend & Cloud Systems Intern (Node.js & Go)',
+    department: 'Cloud Infrastructure & Core API',
+    location: 'Hà Nội / Hybrid',
+    type: 'Internship',
+    description: 'Thiết kế cơ sở dữ liệu quan hệ và NoSQL, xây dựng microservices xử lý lưu lượng cao, tối ưu hóa caching với Redis và tự động hóa CI/CD pipelines.',
+    requirements: ['Node.js / Express', 'PostgreSQL / MongoDB', 'Redis Caching', 'Docker Basics', 'RESTful API Design', 'Go (Khuyến khích)'],
+    minGpa: 3.2,
+    englishRequirement: 'Đọc hiểu tài liệu kỹ thuật tốt (TOEIC 700+)',
+    codingChallengeId: 'challenge-valid-syntax',
+    status: 'active',
+    applicantCount: 19,
+    createdAt: '2026-10-08',
+  },
+];
+
+export const INITIAL_CHALLENGES: CodingChallenge[] = [
+  {
+    id: 'challenge-rag-tokens',
+    title: 'Top K Frequent Tokens in Document / Tìm K Token Phổ Biến Nhất',
+    difficulty: 'Medium',
+    timeLimitMinutes: 30,
+    description: 'Cho một mảng các token chuỗi đại diện cho dữ liệu văn bản thu thập từ tài liệu kỹ thuật và số nguyên k. Hãy trả về k token xuất hiện nhiều nhất, sắp xếp theo tần suất giảm dần. Nếu hai token có cùng tần suất, sắp xếp theo thứ tự bảng chữ cái.',
+    functionName: 'topKFrequent',
+    examples: [
+      {
+        input: 'tokens = ["ai", "python", "model", "ai", "ai", "model"], k = 2',
+        output: '["ai", "model"]',
+        explanation: '"ai" xuất hiện 3 lần, "model" xuất hiện 2 lần.',
+      },
+      {
+        input: 'tokens = ["gpt", "rag", "rag", "gpt", "token"], k = 2',
+        output: '["gpt", "rag"]',
+        explanation: 'Cả hai xuất hiện 2 lần, "gpt" đứng trước "rag" theo bảng chữ cái.',
+      },
+    ],
+    starterCode: `function topKFrequent(tokens, k) {
+  // Viết mã nguồn giải thuật tại đây
+  const map = new Map();
+  for (const t of tokens) {
+    map.set(t, (map.get(t) || 0) + 1);
+  }
+  
+  const sorted = Array.from(map.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0]);
+  });
+  
+  return sorted.slice(0, k).map(entry => entry[0]);
+}`,
+    testCases: [
+      {
+        input: [['ai', 'python', 'model', 'ai', 'ai', 'model'], 2],
+        expected: ['ai', 'model'],
+        description: 'Mảng tiêu chuẩn với các tần suất khác nhau',
+      },
+      {
+        input: [['gpt', 'rag', 'rag', 'gpt', 'token'], 2],
+        expected: ['gpt', 'rag'],
+        description: 'Tần suất bằng nhau cần sắp xếp theo thứ tự từ điển',
+      },
+      {
+        input: [['gemini', 'gemini', 'claude', 'deepseek', 'deepseek'], 1],
+        expected: ['deepseek'],
+        description: 'Lấy top 1 khi có hòa tần suất giữa deepseek và gemini',
+      },
+    ],
+  },
+  {
+    id: 'challenge-dedup-stream',
+    title: 'Array Deduplication & Stream Filter / Lọc Dữ Liệu Trùng Lặp',
+    difficulty: 'Easy',
+    timeLimitMinutes: 20,
+    description: 'Cho một danh sách các sự kiện hoặc id người dùng nhận về từ stream dữ liệu. Hãy loại bỏ các phần tử trùng lặp và giữ nguyên thứ tự xuất hiện đầu tiên, loại bỏ các giá trị không hợp lệ (chuỗi rỗng, null, undefined).',
+    functionName: 'deduplicateStream',
+    examples: [
+      {
+        input: 'items = ["user1", "user2", "user1", "", null, "user3"]',
+        output: '["user1", "user2", "user3"]',
+      },
+    ],
+    starterCode: `function deduplicateStream(items) {
+  // Viết mã nguồn của bạn tại đây
+  const seen = new Set();
+  const result = [];
+  
+  for (const item of items) {
+    if (item !== null && item !== undefined && item !== '' && !seen.has(item)) {
+      seen.add(item);
+      result.push(item);
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: [['user1', 'user2', 'user1', '', null, 'user3']],
+        expected: ['user1', 'user2', 'user3'],
+        description: 'Lọc null, chuỗi rỗng và trùng lặp',
+      },
+      {
+        input: [['alpha', 'beta', 'gamma']],
+        expected: ['alpha', 'beta', 'gamma'],
+        description: 'Không có phần tử trùng lặp',
+      },
+      {
+        input: [['', null, undefined, 'dev', 'dev', 'dev']],
+        expected: ['dev'],
+        description: 'Xử lý các giá trị falsy liên tiếp',
+      },
+    ],
+  },
+  {
+    id: 'challenge-valid-syntax',
+    title: 'Valid Expression Syntax / Kiểm Tra Cú Pháp Ngoặc Hợp Lệ',
+    difficulty: 'Easy',
+    timeLimitMinutes: 25,
+    description: 'Cho một chuỗi s chứa các ký tự ngoặc "(", ")", "{", "}", "[" và "]". Hãy kiểm tra xem chuỗi có hợp lệ hay không. Chuỗi hợp lệ khi các ngoặc mở phải được đóng bằng cùng loại ngoặc và đóng đúng thứ tự.',
+    functionName: 'isValidSyntax',
+    examples: [
+      {
+        input: 's = "()[]{}"',
+        output: 'true',
+      },
+      {
+        input: 's = "(]"',
+        output: 'false',
+      },
+    ],
+    starterCode: `function isValidSyntax(s) {
+  const stack = [];
+  const map = {
+    ')': '(',
+    '}': '{',
+    ']': '['
+  };
+  
+  for (const char of s) {
+    if (char === '(' || char === '{' || char === '[') {
+      stack.push(char);
+    } else if (map[char]) {
+      if (stack.length === 0 || stack.pop() !== map[char]) {
+        return false;
+      }
+    }
+  }
+  
+  return stack.length === 0;
+}`,
+    testCases: [
+      {
+        input: ['()[]{}'],
+        expected: true,
+        description: 'Tất cả các cặp ngoặc chuẩn hợp lệ',
+      },
+      {
+        input: ['([{}])'],
+        expected: true,
+        description: 'Ngoặc lồng nhau nhiều tầng hợp lệ',
+      },
+      {
+        input: ['(]'],
+        expected: false,
+        description: 'Đóng sai loại ngoặc',
+      },
+      {
+        input: ['([)]'],
+        expected: false,
+        description: 'Đóng sai thứ tự ưu tiên lồng ghép',
+      },
+    ],
+  },
+];
+
+export const INITIAL_CANDIDATES: Candidate[] = [
+  {
+    id: 'cand-001',
+    jobId: 'job-ai-intern',
+    fullName: 'Nguyễn Hoàng Nam',
+    email: 'nam.nguyenhoang@gm.uit.edu.vn',
+    phone: '0912 345 678',
+    university: 'Trường ĐH Công nghệ Thông tin - ĐHQG-HCM (UIT)',
+    major: 'Khoa học Dữ liệu & Trí tuệ Nhân tạo',
+    graduationYear: 2026,
+    gpa: 3.78,
+    gpaScale: '4.0',
+    linkedinUrl: 'https://linkedin.com/in/hoangnam-uit-ai',
+    githubUrl: 'https://github.com/namnguyen-ai',
+    achievements: 'Giải Nhì Olympic Tin học Sinh viên Toàn quốc 2025; Đạt học bổng Khuyến khích Học tập 4 học kỳ liên tiếp.',
+    englishCert: {
+      type: 'IELTS',
+      score: '7.5',
+    },
+    techBadges: ['Python', 'PyTorch', 'LangChain', 'RAG Systems', 'Vector DB', 'FastAPI'],
+    cvFileName: 'NguyenHoangNam_CV_AI_Engineer_2026.pdf',
+    cvSummary: 'Sinh viên năm cuối ngành Trí tuệ Nhân tạo tại UIT. Đã nghiên cứu xây dựng trợ lý AI RAG cho sinh viên đại học truy vấn giáo trình với độ chính xác 92%. Có kinh nghiệm thực chiến với PyTorch, Faiss, ChromaDB và fine-tuning Llama-3-8B.',
+    stage: 'final_decision',
+    status: 'passed',
+    appliedDate: '2026-10-02',
+    aiScreeningReport: {
+      fitScore: 94,
+      recommendation: 'pass',
+      strengths: [
+        'GPA 3.78/4.0 xuất sắc từ trường top đầu CNTT (UIT).',
+        'Có chứng chỉ IELTS 7.5 và giải thưởng Olympic Tin học toàn quốc.',
+        'Kỹ năng RAG, PyTorch và Vector DB khớp 100% với yêu cầu dự án AI Lab.',
+      ],
+      redFlags: [
+        'Chưa có kinh nghiệm thực tế triển khai cụm GPU phân tán trên Kubernetes.',
+      ],
+      skillMatch: {
+        Python: 96,
+        'PyTorch / TensorFlow': 92,
+        'LangChain / LlamaIndex': 95,
+        'RAG Architecture': 94,
+        FastAPI: 90,
+        Docker: 82,
+      },
+      summaryAnalysis: 'Ứng viên sáng giá nhất đợt tuyển dụng. Tư duy thuật toán xuất sắc, điểm GPA ấn tượng và có dự án RAG thực chiến rõ ràng.',
+      evaluatedAt: '2026-10-03',
+    },
+    codingSubmission: {
+      problemId: 'challenge-rag-tokens',
+      code: `function topKFrequent(tokens, k) {
+  const map = new Map();
+  for (const t of tokens) {
+    map.set(t, (map.get(t) || 0) + 1);
+  }
+  const sorted = Array.from(map.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0]);
+  });
+  return sorted.slice(0, k).map(entry => entry[0]);
+}`,
+      testsPassed: 3,
+      totalTests: 3,
+      runtimeMs: 14,
+      aiCodeScore: 95,
+      timeComplexity: 'O(N log N)',
+      spaceComplexity: 'O(N)',
+      strengths: [
+        'Vượt qua 100% test cases trong thời gian chạy tối ưu 14ms.',
+        'Sử dụng Map và custom comparator chính xác xử lý trường hợp hòa tần suất.',
+      ],
+      improvements: [
+        'Có thể tối ưu xuống O(N log k) bằng Min-Heap nếu tập token hàng triệu phần tử.',
+      ],
+      cleanCodeVerdict: 'Mã nguồn đạt chuẩn chất lượng cao của kỹ sư AI chuyên nghiệp.',
+      submittedAt: '2026-10-06',
+    },
+    hrScorecard: {
+      interviewerName: 'Trần Văn Kiên (Head of AI Talent)',
+      technicalScore: 95,
+      problemSolvingScore: 92,
+      communicationScore: 90,
+      cultureFitScore: 92,
+      overallScore: 92,
+      notes: 'Thái độ khiêm tốn, ham học hỏi, diễn đạt tiếng Anh lưu loát. Trả lời xuất sắc câu hỏi sâu về tối ưu hóa embedding model và trade-off giữa latency và chunk size trong RAG.',
+      recommendation: 'strong_hire',
+      evaluatedAt: '2026-10-10',
+    },
+    finalDecision: 'hire',
+  },
+  {
+    id: 'cand-002',
+    jobId: 'job-fe-intern',
+    fullName: 'Trần Thị Mai Linh',
+    email: 'linh.ttm@hust.edu.vn',
+    phone: '0908 765 432',
+    university: 'Đại học Bách Khoa Hà Nội (HUST)',
+    major: 'Kỹ thuật Phần mềm',
+    graduationYear: 2026,
+    gpa: 3.65,
+    gpaScale: '4.0',
+    linkedinUrl: 'https://linkedin.com/in/mailinh-frontend',
+    githubUrl: 'https://github.com/mailinh-dev',
+    achievements: 'Học bổng Doanh nghiệp Samsung Talent 2025; Top 5 Hackathon BK TechFest.',
+    englishCert: {
+      type: 'TOEIC',
+      score: '890',
+    },
+    techBadges: ['React', 'TypeScript', 'Tailwind CSS', 'Next.js', 'Redux Toolkit', 'Jest'],
+    cvFileName: 'TranThiMaiLinh_Resume_FE.pdf',
+    cvSummary: 'Nữ sinh viên Kỹ thuật Phần mềm Bách Khoa Hà Nội. Đã tự phát triển 3 dự án web production-ready bằng Next.js 14, Tailwind và Zustand. Quan tâm sâu sắc đến Web Accessibility (a11y) và tối ưu điểm Google Core Web Vitals.',
+    stage: 'assessment',
+    status: 'passed',
+    appliedDate: '2026-10-06',
+    aiScreeningReport: {
+      fitScore: 89,
+      recommendation: 'pass',
+      strengths: [
+        'Nền tảng kỹ thuật phần mềm vững chắc từ HUST (GPA 3.65).',
+        'TOEIC 890 vượt xa chuẩn yêu cầu, khả năng đọc hiểu spec tiếng Anh tốt.',
+        'Hồ sơ GitHub trực quan, mã nguồn sạch, áp dụng TypeScript strict mode.',
+      ],
+      redFlags: [
+        'Kinh nghiệm với Micro-Frontend và SSR caching còn ở mức đồ án cá nhân.',
+      ],
+      skillMatch: {
+        'React / Next.js': 92,
+        TypeScript: 88,
+        'Tailwind CSS': 94,
+        'State Management': 85,
+        'REST / GraphQL': 86,
+        Git: 90,
+      },
+      summaryAnalysis: 'Ứng viên nổi bật cho vị trí Frontend Intern với tư duy sản phẩm thẩm mỹ cao và kiến thức TypeScript chuẩn mực.',
+      evaluatedAt: '2026-10-07',
+    },
+    codingSubmission: {
+      problemId: 'challenge-dedup-stream',
+      code: `function deduplicateStream(items) {
+  const seen = new Set();
+  const result = [];
+  for (const item of items) {
+    if (item !== null && item !== undefined && item !== '' && !seen.has(item)) {
+      seen.add(item);
+      result.push(item);
+    }
+  }
+  return result;
+}`,
+      testsPassed: 3,
+      totalTests: 3,
+      runtimeMs: 8,
+      aiCodeScore: 92,
+      timeComplexity: 'O(N)',
+      spaceComplexity: 'O(N)',
+      strengths: [
+        'Độ phức tạp O(N) tối ưu với cấu trúc Set.',
+        'Xử lý trọn vẹn các giá trị falsy biên.',
+      ],
+      improvements: [
+        'Có thể dùng phương thức filter kết hợp Set nếu muốn ngắn gọn hơn.',
+      ],
+      cleanCodeVerdict: 'Mã nguồn trực quan, đạt điểm kiểm thử kỹ thuật tuyệt đối.',
+      submittedAt: '2026-10-09',
+    },
+    hrScorecard: {
+      interviewerName: 'Lê Minh Quân (Lead Frontend)',
+      technicalScore: 88,
+      problemSolvingScore: 90,
+      communicationScore: 86,
+      cultureFitScore: 88,
+      overallScore: 88,
+      notes: 'Rất chủ động hỏi về design system và quy trình CI/CD của công ty. Tư duy component tái sử dụng rất tốt.',
+      recommendation: 'hire',
+      evaluatedAt: '2026-10-12',
+    },
+  },
+  {
+    id: 'cand-003',
+    jobId: 'job-backend-intern',
+    fullName: 'Lê Quốc Bảo',
+    email: 'baolq.hcmus@gmail.com',
+    phone: '0933 112 233',
+    university: 'Trường ĐH Khoa học Tự nhiên - ĐHQG-HCM (HCMUS)',
+    major: 'Khoa học Máy tính',
+    graduationYear: 2027,
+    gpa: 3.42,
+    gpaScale: '4.0',
+    linkedinUrl: 'https://linkedin.com/in/quocbao-hcmus',
+    githubUrl: 'https://github.com/baole-backend',
+    achievements: 'Thành viên CLB Học thuật Tin học HCMUS; Top 10 Cuộc thi Lập trình Marathon.',
+    englishCert: {
+      type: 'IELTS',
+      score: '6.5',
+    },
+    techBadges: ['Node.js', 'Express', 'PostgreSQL', 'Redis', 'Docker'],
+    cvFileName: 'LeQuocBao_Resume_Backend.pdf',
+    cvSummary: 'Sinh viên năm 3 Khoa học Máy tính HCMUS. Thích tìm hiểu kiến trúc phân tán, thiết kế schema CSDL chuẩn hóa 3NF, phân quyền RBAC và cơ chế caching Redis phòng tránh cache stampede.',
+    stage: 'ai_screening',
+    status: 'passed',
+    appliedDate: '2026-10-09',
+    aiScreeningReport: {
+      fitScore: 81,
+      recommendation: 'pass',
+      strengths: [
+        'Sinh viên Khoa học Máy tính HCMUS với nền tảng cấu trúc dữ liệu và giải thuật bài bản.',
+        'Hiểu sâu về cơ chế transaction trong PostgreSQL và ACID properties.',
+      ],
+      redFlags: [
+        'Chưa thực hành nhiều với ngôn ngữ Go hoặc hệ thống Message Queue như Kafka/RabbitMQ.',
+      ],
+      skillMatch: {
+        'Node.js / Express': 85,
+        'PostgreSQL / MongoDB': 86,
+        'Redis Caching': 80,
+        'Docker Basics': 75,
+        'RESTful API Design': 88,
+        'Go (Khuyến khích)': 55,
+      },
+      summaryAnalysis: 'Ứng viên tiềm năng với tư duy logic tốt. Đủ điều kiện mời vào Vòng 2 kiểm tra lập trình thuật toán và phỏng vấn kỹ thuật.',
+      evaluatedAt: '2026-10-10',
+    },
+  },
+  {
+    id: 'cand-004',
+    jobId: 'job-ai-intern',
+    fullName: 'Đỗ Minh Khang',
+    email: 'khang.do@bkuit.hcmut.edu.vn',
+    phone: '0978 998 877',
+    university: 'Trường ĐH Bách Khoa - ĐHQG-HCM (HCMUT)',
+    major: 'Kỹ thuật Máy tính',
+    graduationYear: 2026,
+    gpa: 3.82,
+    gpaScale: '4.0',
+    linkedinUrl: 'https://linkedin.com/in/minhkhang-bk',
+    githubUrl: 'https://github.com/khangdo-ml',
+    achievements: 'Đồng tác giả 1 bài báo IEEE về Model Compression; Giải Ba Nghiên cứu Khoa học Sinh viên cấp ĐHQG.',
+    englishCert: {
+      type: 'IELTS',
+      score: '8.0',
+    },
+    techBadges: ['Python', 'PyTorch', 'ONNX', 'Quantization', 'CUDA', 'C++'],
+    cvFileName: 'DoMinhKhang_CV_DeepLearning.pdf',
+    cvSummary: 'Đam mê tối ưu hóa hiệu năng tính toán AI, quantization INT8/FP16 và triển khai mô hình trên edge devices. GPA 3.82/4.0 cùng IELTS 8.0, định hướng trở thành AI Infrastructure Engineer.',
+    stage: 'final_decision',
+    status: 'passed',
+    appliedDate: '2026-10-03',
+    aiScreeningReport: {
+      fitScore: 96,
+      recommendation: 'pass',
+      strengths: [
+        'GPA 3.82/4.0 và IELTS 8.0 từ Bách Khoa TP.HCM.',
+        'Có bài báo IEEE và kinh nghiệm sâu về model optimization/quantization.',
+        'Khả năng đọc hiểu paper nghiên cứu AI quốc tế xuất sắc.',
+      ],
+      redFlags: [],
+      skillMatch: {
+        Python: 98,
+        'PyTorch / TensorFlow': 96,
+        'LangChain / LlamaIndex': 88,
+        'RAG Architecture': 90,
+        FastAPI: 88,
+        Docker: 90,
+      },
+      summaryAnalysis: 'Ứng viên toàn diện hiếm có cả về nền tảng lý thuyết lẫn kỹ năng tối ưu mã nguồn cấp thấp.',
+      evaluatedAt: '2026-10-04',
+    },
+    codingSubmission: {
+      problemId: 'challenge-rag-tokens',
+      code: `function topKFrequent(tokens, k) {
+  const map = new Map();
+  for (const t of tokens) {
+    map.set(t, (map.get(t) || 0) + 1);
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0]))
+    .slice(0, k)
+    .map(e => e[0]);
+}`,
+      testsPassed: 3,
+      totalTests: 3,
+      runtimeMs: 11,
+      aiCodeScore: 96,
+      timeComplexity: 'O(N log N)',
+      spaceComplexity: 'O(N)',
+      strengths: [
+        'Thời gian thực thi 11ms xuất sắc, code súc tích và chính xác.',
+      ],
+      improvements: [
+        'Có thể thêm comment giải thích logic sắp xếp từ điển để tăng tính bảo trì.',
+      ],
+      cleanCodeVerdict: 'Mã nguồn chuyên nghiệp, đạt cấp độ kỹ sư chính thức.',
+      submittedAt: '2026-10-07',
+    },
+    hrScorecard: {
+      interviewerName: 'Trần Văn Kiên (Head of AI Talent)',
+      technicalScore: 98,
+      problemSolvingScore: 96,
+      communicationScore: 92,
+      cultureFitScore: 95,
+      overallScore: 95,
+      notes: 'Thực sự gây ấn tượng khi phân tích trade-off lượng tử hóa weight và activation. Tiếng Anh chuẩn quốc tế.',
+      recommendation: 'strong_hire',
+      evaluatedAt: '2026-10-11',
+    },
+    finalDecision: 'hire',
+  },
+  {
+    id: 'cand-005',
+    jobId: 'job-fe-intern',
+    fullName: 'Phạm Thảo Vy',
+    email: 'vypt.fpt@gmail.com',
+    phone: '0944 556 677',
+    university: 'Đại học FPT TP. Hồ Chí Minh',
+    major: 'Kỹ thuật Phần mềm',
+    graduationYear: 2026,
+    gpa: 3.10,
+    gpaScale: '4.0',
+    linkedinUrl: 'https://linkedin.com/in/thaovy-fpt',
+    githubUrl: 'https://github.com/thaovy-design',
+    achievements: 'Chứng chỉ Responsive Web Design freeCodeCamp; Trưởng ban Truyền thông CLB Lập trình FPT.',
+    englishCert: {
+      type: 'TOEIC',
+      score: '780',
+    },
+    techBadges: ['HTML5/CSS3', 'JavaScript', 'React', 'Figma', 'Tailwind CSS'],
+    cvFileName: 'PhamThaoVy_CV.pdf',
+    cvSummary: 'Sinh viên FPT đam mê giao diện web và trải nghiệm người dùng. Sử dụng thành thạo Figma và chuyển đổi mockup sang React component chính xác pixel-perfect.',
+    stage: 'applied',
+    status: 'pending',
+    appliedDate: '2026-10-14',
+  },
+  {
+    id: 'cand-006',
+    jobId: 'job-backend-intern',
+    fullName: 'Vũ Hoàng Long',
+    email: 'longvh.ftu@gmail.com',
+    phone: '0966 332 211',
+    university: 'Trường ĐH Ngoại Thương Hà Nội (FTU)',
+    major: 'Hệ thống Thông tin Quản lý & E-Commerce',
+    graduationYear: 2026,
+    gpa: 2.92,
+    gpaScale: '4.0',
+    linkedinUrl: 'https://linkedin.com/in/hoanglong-tech',
+    githubUrl: 'https://github.com/longvu-dev',
+    achievements: 'Tham gia dự án website bán hàng môn học.',
+    englishCert: {
+      type: 'IELTS',
+      score: '6.0',
+    },
+    techBadges: ['JavaScript', 'Node.js', 'MySQL'],
+    cvFileName: 'VuHoangLong_CV.pdf',
+    cvSummary: 'Chuyển hướng từ thương mại điện tử sang lập trình backend. Đã học qua các khóa học trực tuyến về Node.js và MySQL cơ bản.',
+    stage: 'applied',
+    status: 'pending',
+    appliedDate: '2026-10-15',
+  },
+];
+
+export const I18N = {
+  vi: {
+    brandName: 'TalentMatch AI',
+    tagline: 'Nền Tảng Tuyển Dụng & Sàng Lọc Trí Tuệ Nhân Tạo',
+    roleCandidate: 'Cổng Ứng Viên',
+    roleHr: 'Cổng Tuyển Dụng & HR',
+    navJobs: 'Vị Trí Tuyển Dụng',
+    navDashboard: 'Hồ Sơ Của Tôi',
+    navCodingCenter: 'Trung Tâm Lập Trình Vòng 2',
+    navHrPipeline: 'Quy Trình Tuyển Dụng',
+    navHrJobs: 'Quản Lý Tin Tuyển Dụng',
+    navHrAiScreening: 'Sàng Lọc AI Studio',
+    navHrAssessment: 'Đánh Giá & Phỏng Vấn',
+    navHrDecision: 'Trung Tâm Quyết Định',
+    // Candidate Portal
+    openRoles: 'Cơ Hội Thực Tập & Việc Làm',
+    openRolesDesc: 'Khám phá các vị trí công nghệ mũi nhọn tại trung tâm R&D',
+    applyNow: 'Nộp Đơn Ứng Tuyển',
+    appliedSuccess: 'Nộp hồ sơ thành công! Mã theo dõi của bạn là:',
+    trackingTitle: 'Tiến Trình Ứng Tuyển Theo Thời Gian Thực',
+    stageApplied: 'Đã nộp hồ sơ',
+    stageScreening: 'Sàng lọc bằng AI',
+    stageAssessment: 'Kiểm tra lập trình & Phỏng vấn',
+    stageDecision: 'Quyết định cuối cùng',
+    stepBasic: '1. Thông tin cá nhân',
+    stepEducation: '2. Học vấn & GPA',
+    stepCertificates: '3. Thành tích & Ngoại ngữ',
+    stepCv: '4. Tải lên CV & Hoàn tất',
+    fullName: 'Họ và tên',
+    email: 'Email liên hệ',
+    phone: 'Số điện thoại',
+    university: 'Trường Đại học',
+    major: 'Chuyên ngành đào tạo',
+    gradYear: 'Năm dự kiến tốt nghiệp',
+    gpaScore: 'Điểm trung bình tích lũy (GPA)',
+    gpaScale: 'Thang điểm GPA',
+    englishCertType: 'Chứng chỉ tiếng Anh',
+    englishScore: 'Điểm chứng chỉ',
+    achievementsLabel: 'Thành tích nổi bật / Giải thưởng',
+    skillsBadgesLabel: 'Kỹ năng kỹ thuật chính',
+    cvUploadLabel: 'Tải lên CV (định dạng PDF)',
+    dragDropCv: 'Kéo thả tệp PDF tại đây, hoặc bấm để chọn tệp',
+    btnPrevious: 'Quay lại',
+    btnNext: 'Tiếp tục',
+    btnSubmit: 'Xác Nhận Nộp Đơn',
+    // Coding Center
+    codingTitle: 'Trung Tâm Kiểm Tra Năng Lực Lập Trình (Vòng 2)',
+    codingSubtitle: 'Hoàn thành bài toán thuật toán trực tiếp và nhận kết quả phân tích chất lượng mã từ AI.',
+    btnRunCode: 'Chạy Thử Nghiệm',
+    btnSubmitCode: 'Nộp Bài Kiểm Tra',
+    testResultsTitle: 'Kết Quả Kiểm Thử Tự Động',
+    consoleOutput: 'Cửa Sổ Dữ Liệu Console',
+    aiCodeReviewTitle: 'Đánh Giá Chất Lượng Mã Nguồn Bằng AI',
+    // HR Portal
+    totalCandidates: 'Tổng số ứng viên',
+    screenedByAi: 'Đã sàng lọc AI',
+    readyForRound2: 'Đủ điều kiện Vòng 2',
+    offersExtended: 'Đã đề xuất tuyển dụng',
+    btnRunAiScreening: 'Chạy Sàng Lọc AI',
+    btnBatchInvite: 'Mời Hàng Loạt Vào Vòng 2',
+    filterByJob: 'Lọc theo vị trí',
+    filterByStatus: 'Lọc theo trạng thái',
+    filterByUni: 'Lọc theo trường đại học',
+    searchPlaceholder: 'Tìm theo tên, email, kỹ năng...',
+    kanbanView: 'Chế độ Kanban',
+    tableView: 'Chế độ Bảng',
+    fitScore: 'Điểm Phù Hợp AI',
+    recommendation: 'Đề xuất AI',
+    pass: 'Đạt (Pass)',
+    hold: 'Giữ lại (Hold)',
+    reject: 'Từ chối (Reject)',
+    strengths: 'Điểm mạnh nổi bật',
+    redFlags: 'Cảnh báo tiềm ẩn / Điểm lưu ý',
+    skillBreakdown: 'Mức độ đáp ứng kỹ năng',
+    // Scorecard & Decision
+    hrScorecardTitle: 'Bảng Đánh Giá Phỏng Vấn Nhân Sự & Kỹ Thuật',
+    technicalDepth: 'Chiều sâu kiến thức kỹ thuật (30%)',
+    problemSolving: 'Tư duy giải quyết vấn đề (30%)',
+    communication: 'Kỹ năng giao tiếp & Tiếng Anh (20%)',
+    cultureFit: 'Độ phù hợp văn hóa & Tinh thần học hỏi (20%)',
+    saveScorecard: 'Lưu Điểm Phỏng Vấn',
+    decisionCenterTitle: 'Trung Tâm Quyết Định & Xếp Hạng Tuyển Dụng',
+    decisionWeightsDesc: 'Tùy chỉnh tỷ trọng giữa Điểm AI, Điểm Lập trình và Điểm Phỏng vấn HR để tự động xếp hạng ứng viên.',
+    aiWeightLabel: 'Tỷ trọng Sàng lọc AI',
+    codingWeightLabel: 'Tỷ trọng Kiểm tra Lập trình',
+    hrWeightLabel: 'Tỷ trọng Phỏng vấn HR',
+    weightedTotalScore: 'Điểm Tổng Hợp Có Trọng Số',
+    rank: 'Hạng',
+    actionExtendOffer: 'Gửi Thư Mời Nhận Việc (Offer)',
+    offerExtendedSuccess: 'Đã tạo thư mời nhận việc chính thức!',
+  },
+  en: {
+    brandName: 'TalentMatch AI',
+    tagline: 'AI-Powered Recruitment & Candidate Screening Platform',
+    roleCandidate: 'Candidate Portal',
+    roleHr: 'HR & Recruiting Portal',
+    navJobs: 'Open Positions',
+    navDashboard: 'My Application',
+    navCodingCenter: 'Round 2 Coding Center',
+    navHrPipeline: 'Candidate Pipeline',
+    navHrJobs: 'Job Management',
+    navHrAiScreening: 'AI Screening Studio',
+    navHrAssessment: 'Assessment & Interview',
+    navHrDecision: 'Decision Center',
+    // Candidate Portal
+    openRoles: 'Internship & Job Opportunities',
+    openRolesDesc: 'Discover cutting-edge technology positions at our engineering labs',
+    applyNow: 'Apply Now',
+    appliedSuccess: 'Application submitted successfully! Your tracking code is:',
+    trackingTitle: 'Real-Time Application Tracking',
+    stageApplied: 'Applied',
+    stageScreening: 'AI Screening',
+    stageAssessment: 'Coding Test & HR Interview',
+    stageDecision: 'Final Decision',
+    stepBasic: '1. Basic Information',
+    stepEducation: '2. Education & GPA',
+    stepCertificates: '3. Achievements & English',
+    stepCv: '4. Upload CV & Complete',
+    fullName: 'Full Name',
+    email: 'Contact Email',
+    phone: 'Phone Number',
+    university: 'University',
+    major: 'Major / Field of Study',
+    gradYear: 'Expected Graduation Year',
+    gpaScore: 'Cumulative GPA',
+    gpaScale: 'GPA Grading Scale',
+    englishCertType: 'English Certificate',
+    englishScore: 'Certificate Score',
+    achievementsLabel: 'Key Achievements & Awards',
+    skillsBadgesLabel: 'Technical Skills & Badges',
+    cvUploadLabel: 'Upload CV (PDF format)',
+    dragDropCv: 'Drag and drop PDF file here, or click to browse',
+    btnPrevious: 'Previous',
+    btnNext: 'Next',
+    btnSubmit: 'Submit Application',
+    // Coding Center
+    codingTitle: 'Technical Coding Assessment (Round 2)',
+    codingSubtitle: 'Complete the algorithm challenge live and receive AI-powered code quality analysis.',
+    btnRunCode: 'Run Code',
+    btnSubmitCode: 'Submit Solution',
+    testResultsTitle: 'Automated Test Results',
+    consoleOutput: 'Console Output Window',
+    aiCodeReviewTitle: 'AI Code Quality Review',
+    // HR Portal
+    totalCandidates: 'Total Candidates',
+    screenedByAi: 'AI Screened',
+    readyForRound2: 'Round 2 Qualified',
+    offersExtended: 'Offers Extended',
+    btnRunAiScreening: 'Run AI Screening',
+    btnBatchInvite: 'Batch Invite to Round 2',
+    filterByJob: 'Filter by Job',
+    filterByStatus: 'Filter by Status',
+    filterByUni: 'Filter by University',
+    searchPlaceholder: 'Search by name, email, skills...',
+    kanbanView: 'Kanban View',
+    tableView: 'Table View',
+    fitScore: 'AI Fit Score',
+    recommendation: 'AI Recommendation',
+    pass: 'Pass',
+    hold: 'Hold',
+    reject: 'Reject',
+    strengths: 'Key Strengths',
+    redFlags: 'Potential Red Flags / Risks',
+    skillBreakdown: 'Skill Requirement Fit',
+    // Scorecard & Decision
+    hrScorecardTitle: 'HR & Technical Interview Scorecard',
+    technicalDepth: 'Technical Depth (30%)',
+    problemSolving: 'Problem Solving (30%)',
+    communication: 'Communication & English (20%)',
+    cultureFit: 'Culture Fit & Growth Mindset (20%)',
+    saveScorecard: 'Save Interview Scorecard',
+    decisionCenterTitle: 'Decision Center & Candidate Ranking',
+    decisionWeightsDesc: 'Adjust the weights between AI Fit Score, Coding Test, and HR Interview to automatically calculate composite rankings.',
+    aiWeightLabel: 'AI Screening Weight',
+    codingWeightLabel: 'Coding Test Weight',
+    hrWeightLabel: 'HR Interview Weight',
+    weightedTotalScore: 'Weighted Total Score',
+    rank: 'Rank',
+    actionExtendOffer: 'Extend Offer Letter',
+    offerExtendedSuccess: 'Official offer letter generated successfully!',
+  },
+};
