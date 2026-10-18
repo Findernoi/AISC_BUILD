@@ -1,0 +1,93 @@
+{
+  "dataset_version": "1.0",
+  "seed": 20261018,
+  "source": "100% synthetic; no real company observations",
+  "target": "required_interns_next_month",
+  "horizon_months": 1,
+  "categorical_features": [
+    "company_id",
+    "department"
+  ],
+  "numeric_features": [
+    "month_index",
+    "target_month_sin",
+    "target_month_cos",
+    "required_interns_current",
+    "required_interns_lag_1m",
+    "required_interns_lag_2m",
+    "required_interns_same_month_last_year",
+    "required_interns_mean_3m",
+    "required_interns_mean_6m",
+    "interns_current",
+    "permanent_staff_current",
+    "active_projects_current",
+    "overtime_hours_current",
+    "planned_projects_next_month",
+    "planned_workload_hours_next_month",
+    "planned_mentor_capacity_next_month",
+    "planned_stipend_budget_vnd_next_month",
+    "planned_intern_exits_next_month",
+    "confirmed_intern_starts_next_month",
+    "working_days_next_month"
+  ],
+  "not_features": [
+    "origin_month",
+    "target_month",
+    "snapshot_date",
+    "horizon_months",
+    "data_source",
+    "is_synthetic",
+    "split",
+    "required_interns_next_month"
+  ],
+  "history_rows": 2790,
+  "training_rows": 2400,
+  "forecast_input_rows": 30,
+  "companies": 10,
+  "departments": [
+    "AI",
+    "Frontend",
+    "Backend"
+  ],
+  "history_period": [
+    "2019-01",
+    "2026-09"
+  ],
+  "target_period": [
+    "2020-02",
+    "2026-09"
+  ],
+  "splits": {
+    "train": {
+      "rows": 1770,
+      "from": "2020-02",
+      "to": "2024-12"
+    },
+    "validation": {
+      "rows": 360,
+      "from": "2025-01",
+      "to": "2025-12"
+    },
+    "test": {
+      "rows": 270,
+      "from": "2026-01",
+      "to": "2026-09"
+    }
+  },
+  "assumptions": {
+    "stipend_vnd_per_intern_month": 4000000,
+    "effective_hours_per_intern_month_range": [
+      90,
+      115
+    ],
+    "fictional_calendar": true,
+    "demand_definition": "Monthly total approved intern headcount need, constrained by fictional funding and mentorship capacity"
+  },
+  "limitations": [
+    "Synthetic metrics measure the simulation only",
+    "Not a real-data validated model",
+    "No transfer guarantee to a real company",
+    "Training output is not connected to the app",
+    "No applicant data, GPA, attendance or peer reviews are needed"
+  ]
+}

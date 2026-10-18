@@ -1,0 +1,101 @@
+{
+  "data": "100% synthetic, seeded simulation; metrics are not real-world accuracy",
+  "evaluation": "Chronological, rolling one-step forecasts for the same 10 fictional companies. Each test month may use the preceding month's observed history. No held-out-company claim.",
+  "validation": {
+    "last_month": {
+      "MAE_interns": 1.575,
+      "RMSE_interns": 2.085
+    },
+    "same_month_last_year": {
+      "MAE_interns": 1.7972,
+      "RMSE_interns": 2.4147
+    },
+    "ridge": {
+      "MAE_interns": 1.0053,
+      "RMSE_interns": 1.3074
+    }
+  },
+  "alpha_candidates_validation_MAE": [
+    {
+      "alpha": 0.1,
+      "MAE_interns": 1.0053
+    },
+    {
+      "alpha": 1.0,
+      "MAE_interns": 1.0055
+    },
+    {
+      "alpha": 10.0,
+      "MAE_interns": 1.0075
+    },
+    {
+      "alpha": 100.0,
+      "MAE_interns": 1.0249
+    }
+  ],
+  "selected_alpha": 0.1,
+  "test": {
+    "last_month": {
+      "MAE_interns": 1.5,
+      "RMSE_interns": 2.1073
+    },
+    "same_month_last_year": {
+      "MAE_interns": 1.6704,
+      "RMSE_interns": 2.2203
+    },
+    "ridge": {
+      "MAE_interns": 1.053,
+      "RMSE_interns": 1.3486
+    }
+  },
+  "test_rows": 270,
+  "test_target_period": [
+    "2026-01",
+    "2026-09"
+  ],
+  "test_by_department": {
+    "AI": {
+      "last_month": {
+        "MAE_interns": 1.2556,
+        "RMSE_interns": 1.7029
+      },
+      "same_month_last_year": {
+        "MAE_interns": 1.5667,
+        "RMSE_interns": 2.1055
+      },
+      "ridge": {
+        "MAE_interns": 0.9205,
+        "RMSE_interns": 1.1558
+      }
+    },
+    "Backend": {
+      "last_month": {
+        "MAE_interns": 1.5667,
+        "RMSE_interns": 2.1213
+      },
+      "same_month_last_year": {
+        "MAE_interns": 1.8556,
+        "RMSE_interns": 2.3875
+      },
+      "ridge": {
+        "MAE_interns": 1.1519,
+        "RMSE_interns": 1.4247
+      }
+    },
+    "Frontend": {
+      "last_month": {
+        "MAE_interns": 1.6778,
+        "RMSE_interns": 2.4336
+      },
+      "same_month_last_year": {
+        "MAE_interns": 1.5889,
+        "RMSE_interns": 2.1577
+      },
+      "ridge": {
+        "MAE_interns": 1.0866,
+        "RMSE_interns": 1.446
+      }
+    }
+  },
+  "metric_definition": "MAE: average absolute difference in interns. RMSE: root mean square difference. Fractional predictions used in metrics; no accuracy percentage."
+}

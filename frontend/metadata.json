@@ -1,0 +1,6 @@
+{
+  "name": "TalentForecast AI — Dự Báo Nhân Lực Và Tuyển Dụng UIT",
+  "description": "Demo dự báo nhu cầu nhân lực doanh nghiệp, xác suất tuyển dụng, sàng lọc hồ sơ UIT và hỗ trợ quyết định của HR.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

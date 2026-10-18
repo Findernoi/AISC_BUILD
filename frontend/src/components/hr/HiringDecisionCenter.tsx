@@ -1,0 +1,43 @@
+import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import { eligibility, finalScore, manualCodingScore, roundOneScore, roundTwoComplete } from '../../lib/recruitment';
+import { Panel, Field, Empty } from '../analytics/Shared';
+import type { Candidate } from '../../types';
+
+export function HiringDecisionCenter() {
+  const { candidates,jobs,weights,setWeights,demoMode,activeCandidateId,setActiveCandidateId,updateCandidate } = useApp();
+  const invited = candidates.filter(c=>c.invitation);
+  const ranking = invited.map(c=>({c,job:jobs.find(j=>j.id===c.jobId)})).map(r=>({...r,score:r.job?finalScore(r.c,r.job,weights,demoMode):null})).sort((a,b)=>(b.score??-1)-(a.score??-1)||a.c.id.localeCompare(b.c.id));
+  const selected = ranking.find(r=>r.c.id===activeCandidateId) || ranking[0];
+  return <div className="space-y-6"><div><p className="mb-2 text-xs uppercase tracking-widest text-indigo-300">Sau vòng 2 · Quyết định cuối cùng thuộc HR</p><h1 className="text-3xl font-bold">Tổng hợp và quyết định</h1><p className="mt-2 text-sm text-slate-400">Chỉ có điểm tổng hợp khi email và thông tin tự khai hợp lệ, có điểm bài test lập trình và đủ 5 tiêu chí phỏng vấn.</p></div><Panel title="Tỷ trọng điểm tổng hợp"><div className="grid gap-4 sm:grid-cols-3">{([['aiWeight','Vòng 1 hồ sơ'],['assessmentWeight','Điểm bài test lập trình'],['hrWeight','Phỏng vấn vòng 2']] as const).map(([key,label])=><Field key={key} label={`${label} · ${weights[key]}%`}><input type="range" min="0" max="100" step="5" value={weights[key]} onChange={e=>setWeights(prev=>({...prev,[key]:Number(e.target.value)}))} /></Field>)}</div><p className={`mt-4 text-sm ${weights.aiWeight+weights.assessmentWeight+weights.hrWeight===100?'text-indigo-200':'text-rose-300'}`}>Tổng tỷ trọng: {weights.aiWeight+weights.assessmentWeight+weights.hrWeight}% · Phải bằng 100% để ra điểm.</p><p className="mt-3 text-xs text-slate-500">Điểm tổng = vòng 1 × tỷ trọng + điểm bài test lập trình × tỷ trọng + phỏng vấn × tỷ trọng. Không tự thêm điểm còn thiếu. Thay tỷ trọng sau khi lưu quyết định thì HR phải xác nhận lại trước khi mô phỏng gửi email.</p></Panel>
+    <Panel title="Bảng tổng hợp sau phỏng vấn"><div className="overflow-x-auto"><table className="data-table"><thead><tr><th>Hạng</th><th>Ứng viên</th><th>Vòng 1</th><th>Điểm bài test lập trình</th><th>Phỏng vấn</th><th>Tổng hợp</th><th>HR quyết định</th></tr></thead><tbody>{ranking.map((r,i)=><tr key={r.c.id}><td>{r.score===null?'—':i+1}</td><td><button className="text-left font-semibold text-indigo-200" onClick={()=>setActiveCandidateId(r.c.id)}>{r.c.fullName}</button><p className="text-xs text-slate-500">{r.job?.title}</p></td><td>{r.job?roundOneScore(r.c,r.job,demoMode).total:'—'}</td><td>{manualCodingScore(r.c)??'Chưa nhập'}</td><td>{r.c.interviewEvaluation?.overallScore??'Chưa đủ'}</td><td className="font-mono text-indigo-200">{r.score??'Chưa đủ điều kiện'}</td><td>{r.c.hiringDecision?({hire:'Chọn tuyển',reserve:'Dự phòng',reject:'Không chọn'})[r.c.hiringDecision.result]:'Chưa quyết định'}</td></tr>)}</tbody></table>{!ranking.length&&<Empty>Chưa có hồ sơ được chọn vào vòng 2.</Empty>}</div></Panel>
+    {selected?.job&&<DecisionForm key={selected.c.id} candidate={selected.c} jobId={selected.job.id} />}
+  </div>;
+}
+function DecisionForm({ candidate:c, jobId }: {candidate:Candidate;jobId:string}) {
+  const {jobs,weights,demoMode,updateCandidate} = useApp();
+  const job = jobs.find(j=>j.id===jobId)!;
+  const [reviewer,setReviewer] = useState(c.hiringDecision?.decidedBy || '');
+  const [result,setResult] = useState<'hire'|'reserve'|'reject'>(c.hiringDecision?.result || 'hire');
+  const [reason,setReason] = useState(c.hiringDecision?.reason || '');
+  const [subject,setSubject] = useState(c.emailDraft?.subject || '');const [body,setBody] = useState(c.emailDraft?.body || '');const [checked,setChecked] = useState(false);const [notice,setNotice] = useState('');
+  const score = finalScore(c,job,weights,demoMode);
+  const decisionCurrent = !!c.hiringDecision && score!==null && c.hiringDecision.finalScore===score && Object.keys(c.hiringDecision.weights).length===3 && Object.keys(weights).every(k=>weights[k as keyof typeof weights]===c.hiringDecision!.weights[k as keyof typeof weights]);
+  const save = (e:React.FormEvent) => {
+    e.preventDefault();if(score===null||!reviewer.trim()||!reason.trim()){setNotice('Cần đủ điểm vòng 2, thông tin hồ sơ hợp lệ, tên người quyết định và lý do.');return;}
+    const outcome = result==='hire'?'được chọn cho vị trí':result==='reserve'?'được lưu trong danh sách dự phòng cho vị trí':'chưa được chọn cho vị trí';
+    const emailSubject=`[TalentForecast] Kết quả ứng tuyển ${job.title}`;
+    setSubject(emailSubject);
+    const emailBody=`Chào ${c.fullName},\n\nCảm ơn bạn đã tham gia quy trình tuyển dụng. Sau khi xem xét hồ sơ và vòng phỏng vấn, đội ngũ tuyển chọn xác nhận bạn ${outcome} ${job.title}.\n\nPhản hồi từ HR: ${reason.trim()}\n\n${result==='hire'?'Vui lòng phản hồi để xác nhận và thống nhất các bước tiếp theo.\n\n':''}Trân trọng,\n${reviewer.trim()}\nĐội ngũ tuyển dụng`;
+    setBody(emailBody);
+    updateCandidate(c.id,{hiringDecision:{result,reason:reason.trim(),decidedBy:reviewer.trim(),decidedAt:new Date().toISOString(),finalScore:score,weights:{...weights}},finalDecision:result,status:result==='hire'?'passed':result==='reserve'?'hold':'rejected',stage:result==='hire'?'offer':'interview',stageHistory:result==='hire'?[...new Set([...(c.stageHistory||[]),'offer' as const])]:c.stageHistory,emailDraft:{subject:emailSubject,body:emailBody,createdAt:new Date().toISOString(),state:'draft'}});
+    setChecked(false);setNotice('Đã lưu quyết định của HR và tạo nội dung email nháp. Chưa gửi email.');
+  };
+  return <Panel title={`Quyết định của HR · ${c.fullName}`}>
+    {!roundTwoComplete(c)&&<p className="mb-4 text-sm text-amber-300">Cần đủ 5 tiêu chí phỏng vấn và điểm bài test lập trình. Không tự suy ra điểm hoặc tự chọn tuyển.</p>}
+    {!eligibility(c,demoMode).eligible&&<p className="mb-4 text-sm text-amber-300">Email UIT, ngành hoặc GPA tự khai chưa hợp lệ; cần kiểm tra hồ sơ.</p>}
+    <form className="space-y-4" onSubmit={save}><div className="grid gap-4 sm:grid-cols-2"><Field label="HR hoặc người quyết định"><input required value={reviewer} onChange={e=>setReviewer(e.target.value)} /></Field><Field label="Quyết định của hội đồng"><select value={result} onChange={e=>setResult(e.target.value as typeof result)}><option value="hire">Chọn tuyển</option><option value="reserve">Dự phòng</option><option value="reject">Không chọn</option></select></Field></div><Field label="Lý do dựa trên kết quả đánh giá"><textarea required rows={3} value={reason} onChange={e=>setReason(e.target.value)} /></Field><button className="btn-primary" type="submit" disabled={score===null}>Lưu quyết định của HR</button></form>
+    {c.hiringDecision&&<div className="mt-6 space-y-4 border-t border-slate-800 pt-5"><h3 className="font-semibold">Email kết quả để HR duyệt</h3><p className="text-sm text-slate-400">Người nhận: {c.email}</p><Field label="Tiêu đề email"><input value={subject} onChange={e=>{setSubject(e.target.value);setChecked(false);}} /></Field><Field label="Nội dung email"><textarea rows={9} value={body} onChange={e=>{setBody(e.target.value);setChecked(false);}} /></Field><label className="flex items-start gap-3 text-sm text-slate-400"><input type="checkbox" checked={checked} onChange={e=>setChecked(e.target.checked)} /><span>HR đã kiểm tra người nhận, quyết định và nội dung phản hồi.</span></label><div className="flex flex-wrap gap-3"><button className="btn-secondary" disabled={!decisionCurrent || !subject.trim() || !body.trim()} onClick={()=>{updateCandidate(c.id,{emailDraft:{subject,body,createdAt:new Date().toISOString(),state:'draft'}});setNotice('Đã lưu email nháp. Chưa gửi.');}}>Lưu nháp</button><button className="btn-primary" disabled={!demoMode||!decisionCurrent||!checked||!subject.trim()||!body.trim()} onClick={()=>{updateCandidate(c.id,{emailDraft:{subject,body,createdAt:new Date().toISOString(),state:'demo_sent'}});setNotice('Đã mô phỏng gửi email thành công. Không có email thật được gửi.');}}>Mô phỏng gửi email</button></div>{!decisionCurrent&&<p className="text-xs text-amber-300">Điểm hoặc tỷ trọng đã thay đổi. Cần lưu lại quyết định trước khi gửi demo.</p>}<p className="text-xs text-slate-500">Chức năng email hiện chỉ mô phỏng trên trình duyệt. Backend và dịch vụ email sẽ được tích hợp sau.</p></div>}
+    {notice&&<p role="status" className="mt-4 text-sm text-indigo-200">{notice}</p>}
+  </Panel>;
+}

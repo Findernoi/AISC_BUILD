@@ -6,3 +6,18 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local tools, generated previews and temporary documents
+.aistudio/
+tmp/
+output/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Keep extracted research data; omit duplicate archives
+data/*.zip
+
+# Local student research datasets are not published
+/data/Student Placement Outcomes/
