@@ -10,7 +10,10 @@
     "preview": "vite preview --config frontend/vite.config.ts",
     "clean": "node scripts/clean.mjs",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx --test frontend/tests/*.test.ts"
+    "test": "node --import tsx --test frontend/tests/*.test.ts backend/tests/*.test.ts",
+    "dev:database": "tsx backend/src/dev-database.ts",
+    "dev:recruitment": "tsx backend/src/dev-recruitment.ts",
+    "test:database": "node --import tsx --test backend/tests/*.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -27,6 +30,7 @@
     "vite": "^8.3.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
     "@types/canvas-confetti": "^1.9.0",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",

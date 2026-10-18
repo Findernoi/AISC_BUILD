@@ -30,6 +30,8 @@
     "frontend/src",
     "frontend/tests",
     "frontend/vite.config.ts",
-    "backend/src"
+    "backend/src",
+    "backend/tests",
+    "shared"
   ]
 }

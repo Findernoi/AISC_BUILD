@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI, Type } from '@google/genai';
+import { createRecruitmentRouter } from './recruitment-api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +30,35 @@ const supabaseAdmin =
       })
     : null;
 
+app.use('/api/recruitment', express.json({limit:'32kb'}), createRecruitmentRouter({local:process.env.RECRUITMENT_LOCAL === 'true'}));
 app.use(express.json({ limit: '10mb' }));
+
+app.get('/api/database/preview', async (req: Request, res: Response) => {
+  if (process.env.DATABASE_PREVIEW !== 'true' || process.env.NODE_ENV === 'production') {
+    res.status(404).json({ error: 'Database preview is available only with npm run dev:database.' });
+    return;
+  }
+  if (!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress ?? '')) {
+    res.status(403).json({ error: 'Local preview requires a loopback connection.' });
+    return;
+  }
+  const { PREVIEW_IDENTITIES } = await import('../../shared/database');
+  const identity = req.query.identity ?? 'hr';
+  if (typeof identity !== 'string' || !Object.hasOwn(PREVIEW_IDENTITIES, identity)) {
+    res.status(400).json({ error: 'Unknown local preview identity.' });
+    return;
+  }
+  res.setHeader('Cache-Control','no-store');
+  try {
+    const { readDatabasePreview } = await import('./database-preview');
+    const database = process.env.RECRUITMENT_LOCAL === 'true'
+      ? await (await import('./recruitment-local')).localRecruitmentDatabase() : undefined;
+    res.json(await readDatabasePreview(identity as keyof typeof PREVIEW_IDENTITIES, database));
+  } catch (error) {
+    console.error('Local database preview failed:', error);
+    res.status(500).json({ error: 'Không khởi tạo được database kiểm thử cục bộ. Xem log server.' });
+  }
+});
 
 // Initialize Google GenAI
 const apiKey = process.env.GEMINI_API_KEY;
@@ -275,7 +304,8 @@ async function startServer() {
     });
   }
 
-  app.listen(port, () => {
+  const host = process.env.DATABASE_PREVIEW === 'true' ? '127.0.0.1' : '0.0.0.0';
+  app.listen(Number(port), host, () => {
     console.log(`TalentForecast AI server running on http://localhost:${port}`);
   });
 }

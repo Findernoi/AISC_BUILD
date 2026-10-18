@@ -1,0 +1,39 @@
+import { createClient } from '@supabase/supabase-js';
+import type { ApplicationInput, RecruitmentApplication, RecruitmentJob, RecruitmentUser } from '../../shared/recruitment';
+import { ApiError } from './recruitment-validation';
+
+export interface RecruitmentStore {
+  user: RecruitmentUser | null;
+  jobs(): Promise<RecruitmentJob[]>;
+  applications(): Promise<RecruitmentApplication[]>;
+  apply(input: ApplicationInput): Promise<RecruitmentApplication>;
+  createJob(input: {title:string;department:string;description:string;location:string;min_gpa:number}): Promise<RecruitmentJob>;
+}
+// Select explicit fields: internal evaluations/decisions never enter this API.
+export const JOB_COLUMNS = 'id,title,department,description,location,requirements,min_gpa,status';
+export const APPLICATION_COLUMNS = 'id,job_id,applicant_id,full_name,contact_email,phone,major,gpa,gpa_scale,graduation_year,project_count,experience_months,skills,project_description,stage,status,created_at,revision';
+
+export async function supabaseStore(token: string | undefined): Promise<RecruitmentStore> {
+  const url=process.env.SUPABASE_URL, key=process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) throw new ApiError(503,'Chưa cấu hình Supabase cho API tuyển dụng.');
+  // Each request gets its own user-scoped client. Never use service-role for CRUD.
+  const client=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
+    ...(token ? {accessToken:async()=>token} : {})});
+  let user: RecruitmentUser | null=null;
+  if (token) {
+    const verifier=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+    const verified=await verifier.auth.getUser(token);
+    if (verified.error || !verified.data.user) throw new ApiError(401,'Phiên đăng nhập hết hạn hoặc không hợp lệ.');
+    if (!verified.data.user.email_confirmed_at) throw new ApiError(403,'Hãy xác nhận email trước khi sử dụng.');
+    const role=await client.rpc('recruitment_role');
+    if (role.error) throw role.error;
+    user={id:verified.data.user.id,email:verified.data.user.email ?? '',role:role.data === 'hr' ? 'hr' : 'candidate'};
+  }
+  return {
+    user,
+    async jobs() { const r=await client.from('jobs').select(JOB_COLUMNS).order('created_at',{ascending:false}).limit(200); if(r.error)throw r.error; return r.data as RecruitmentJob[]; },
+    async applications() { const r=await client.from('applications').select(APPLICATION_COLUMNS).order('created_at',{ascending:false}).limit(200); if(r.error)throw r.error; return r.data as RecruitmentApplication[]; },
+    async apply(input) { const r=await client.from('applications').insert({...input,applicant_id:user!.id,contact_email:user!.email.toLowerCase(),university:'UIT'}).select(APPLICATION_COLUMNS).single(); if(r.error)throw r.error; return r.data as RecruitmentApplication; },
+    async createJob(input) { const r=await client.from('jobs').insert({...input,created_by:user!.id}).select(JOB_COLUMNS).single(); if(r.error)throw r.error; return r.data as RecruitmentJob; },
+  };
+}

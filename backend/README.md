@@ -2,6 +2,17 @@
 
 Mã Express hiện có nằm trong `src/server.ts`. Chạy từ thư mục gốc bằng `npm run dev`; dependencies và cấu hình TypeScript dùng chung ở gốc.
 
+## Database giai đoạn 1
+
+Đã có [schema, migration và hướng dẫn](database/README.md) cho 12 bảng nghiệp vụ, kho vai trò HR riêng và Supabase Auth. Migration đã được chạy/kiểm thử trên PostgreSQL cục bộ qua PGlite, chưa áp dụng cloud. Ứng dụng chính vẫn lưu dữ liệu trên trình duyệt.
+
+```powershell
+npm run test:database
+npm run dev:database
+```
+
+Mở `http://127.0.0.1:3000/?view=database` rồi vào demo để xem bảng, cột và quyền đọc thật qua RLS với tài khoản mẫu. Endpoint preview chỉ bật local development, không phải API production hoặc đăng nhập Supabase thật.
+
 ## API hiện có
 
 - `GET /api/health`: trạng thái ứng dụng.
@@ -16,3 +27,16 @@ Mã Express hiện có nằm trong `src/server.ts`. Chạy từ thư mục gốc
 Tách routes, controllers, services và repositories trong `src/` khi triển khai từng chức năng. Định nghĩa request/response dùng chung tại `shared/`, bổ sung database migrations và kiểm tra quyền truy cập cho ứng viên/HR. Giữ API dưới `/api` để frontend có thể gọi cùng origin.
 
 `.env` đặt ở gốc. Gemini API key và Supabase service role key chỉ dùng phía server. Khi production, build frontend trước rồi chạy `npm start` với `NODE_ENV=production`.
+
+## Luồng nộp hồ sơ qua backend
+
+`npm run dev:recruitment` mở cổng `/?view=applications` với tài khoản local, database lưu trên ổ đĩa và RLS thật. `npm run dev` dùng Supabase và không có đường đăng nhập mẫu. Các API mới nằm dưới `/api/recruitment`, tách khỏi API sàng lọc thử nghiệm cũ.
+
+- `GET /session`: chế độ chạy và danh tính/vai trò đã xác thực.
+- `GET /jobs`: tối đa 200 vị trí được phép đọc, vị trí đang mở cho ứng viên/khách.
+- `POST /jobs`: HR tạo vị trí.
+- `GET /applications`: tối đa 200 hồ sơ mới nhất trong phạm vi RLS.
+- `POST /applications`: ứng viên nộp hồ sơ, backend lấy email/owner từ phiên đã xác thực.
+- `POST /local-session`, `POST /logout`: phiên mẫu chỉ có trong local mode. Cloud đăng nhập/đăng xuất qua Supabase SDK.
+
+Chi tiết tại [database/README.md](database/README.md#luong-nop-ho-so-qua-api). Chưa chuyển các màn hình chấm điểm cũ sang API.

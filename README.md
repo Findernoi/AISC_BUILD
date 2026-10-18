@@ -42,6 +42,29 @@ npm run dev
 
 Mở `http://localhost:3000`, chọn **Khám phá bản demo frontend** và **Thêm bộ hồ sơ mẫu UIT**. Hồ sơ mẫu được gắn nhãn minh họa; không cần tài khoản hoặc API để thử. Dữ liệu cũ được giữ lại.
 
+## Thử luồng nộp hồ sơ qua backend
+
+```powershell
+npm run dev:recruitment
+```
+
+Mở `http://127.0.0.1:3000/?view=applications`. Chọn ứng viên mẫu A/B, nộp hồ sơ, đăng xuất rồi chọn HR để xem hồ sơ. HR cũng có thể tạo vị trí mới. Đây là tài khoản giả lập chỉ có ở development/localhost, không phải đăng nhập Supabase. Dữ liệu PostgreSQL lưu tại `.local/recruitment/`, được giữ qua lần khởi động server và không đưa lên Git. Người khác pull repo rồi chạy lệnh này sẽ có database local riêng với hai vị trí mẫu, chưa có hồ sơ.
+
+Cổng mới dùng API/database; giao diện demo chấm điểm cũ vẫn dùng localStorage/IndexedDB. Chưa nối upload CV, vòng phỏng vấn, quyết định hoặc gửi thư thật. Không tự nhập dữ liệu cũ. Khi chạy chế độ này, trang xem database cũng đọc cùng database với cổng ứng tuyển.
+
+`npm run dev` hoặc production dùng Supabase Auth và JWT của người gọi để áp dụng RLS. Trước khi dùng cloud cần áp dụng hai migration theo thứ tự và cấp HR cho đúng tài khoản đã xác nhận; chưa tự chạy migration lên cloud. Xem [API, cách triển khai và giới hạn](backend/database/README.md#luong-nop-ho-so-qua-api).
+
+## Xem thiết kế database local
+
+Đã có schema/migration cho Supabase Auth và 12 bảng nghiệp vụ, kiểm tra RLS bằng PostgreSQL cục bộ. Chưa áp dụng lên Supabase thật hoặc chuyển hồ sơ trình duyệt sang database.
+
+```powershell
+npm run test:database
+npm run dev:database
+```
+
+Mở `http://127.0.0.1:3000/?view=database`, chọn **Khám phá bản demo frontend**, xem **Tổng quan tuyển dụng → Database (local)**. Thử HR mẫu, ứng viên mẫu A/B và khách để kiểm tra dữ liệu mỗi tài khoản được đọc. Preview dùng dữ liệu giả lập trong bộ nhớ, tạo lại khi khởi động server, chỉ bật trên localhost/development. Xem [schema và giới hạn giai đoạn 1](backend/database/README.md).
+
 ## Luồng chính
 
 - **Tổng quan tuyển dụng**: dự báo nhu cầu nhân lực doanh nghiệp, xác suất ứng viên được tuyển, thống kê qua từng vòng, vị trí và giả định nhận offer cố định 75%.
