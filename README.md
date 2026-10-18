@@ -90,7 +90,7 @@ Workforce dùng Ridge trên dữ liệu giả lập. Trong Tổng quan tuyển d
 
 Bộ dữ liệu ML dự báo nhu cầu intern theo tháng/phòng ban nằm trong [data/workforce_synthetic](data/workforce_synthetic/README.md): 2.790 dòng lịch sử giả lập, 2.400 mẫu học, mẫu nhập dữ liệu thật và từ điển cột. Mã mô phỏng, huấn luyện Ridge và báo cáo đánh giá nằm ở `ml/workforce/`. Model đã được export sang frontend cho kịch bản giả lập; chưa kiểm định trên doanh nghiệp thật.
 
-Mô hình placement dùng [Campus Recruitment CSV](data/campus_recruitment/README.md), thay bộ Student Placement Outcomes của cuộc thi Kaggle. Nguồn công bố CC0; ba CSV gốc có tổng 10.000 dòng. Pipeline [ml/placement](ml/placement/README.md) kiểm tra checksum, lọc giao nhau giữa các tập, train Logistic Regression với GPA và số dự án, so sánh baseline và bản ba đầu vào trước đây. [Báo cáo đánh giá](ml/placement/artifacts/EVALUATION.md) lưu kết quả của lần chạy; model và preprocessing được xuất JSON. Model hai đầu vào đã nối frontend, chưa kiểm định tại UIT; cột `Internships` vẫn giữ trong CSV gốc nhưng không đưa vào X hoặc form.
+Mô hình placement dùng [Campus Recruitment CSV](data/campus_recruitment/README.md). Nguồn công bố CC0; ba CSV gốc có tổng 10.000 dòng. Pipeline [ml/placement](ml/placement/README.md) kiểm tra checksum, lọc giao nhau giữa các tập, train Logistic Regression với GPA và số dự án, so sánh baseline và bản ba đầu vào trước đây. [Báo cáo đánh giá](ml/placement/artifacts/EVALUATION.md) lưu kết quả của lần chạy; model và preprocessing được xuất JSON. Model hai đầu vào đã nối frontend, chưa kiểm định tại UIT; cột `Internships` vẫn giữ trong CSV gốc nhưng không đưa vào X hoặc form.
 
 ```sh
 npm run lint

@@ -1,6 +1,6 @@
 # Campus Recruitment
 
-Bộ dữ liệu thay thế Student Placement Outcomes cho thử nghiệm placement của TalentForecast AI. Đã có pipeline train offline tại [ml/placement](../../ml/placement/README.md); model hai đầu vào đã tích hợp vào giao diện.
+Bộ dữ liệu dùng cho thử nghiệm placement của TalentForecast AI. Đã có pipeline train offline tại [ml/placement](../../ml/placement/README.md); model hai đầu vào đã tích hợp vào giao diện.
 
 ## Nguồn và giấy phép
 
@@ -23,7 +23,7 @@ Mô tả nguồn chỉ nêu một campus XYZ; chưa có thông tin đủ để x
 | test.csv | 1.500 |
 | Tổng | 10.000 |
 
-Cả ba file đều có nhãn `PlacementStatus`: `Placed` và `NotPlaced`. Đây là bộ dữ liệu khác cuộc thi Kaggle cũ; test của bộ mới có nhãn. Không có ô trống trong các CSV tải về. Có 72 dòng dư trùng toàn bộ thuộc tính và nhãn trên tổng 10.000 dòng; chưa xóa hoặc thay đổi các file gốc. Các dòng giống nhau không chứng minh cùng một người vì không có ID. Pipeline đã kiểm tra giao nhau và ghi chi tiết cách lọc trong báo cáo đánh giá.
+Cả ba file đều có nhãn `PlacementStatus`: `Placed` và `NotPlaced`. Không có ô trống trong các CSV tải về. Có 72 dòng dư trùng toàn bộ thuộc tính và nhãn trên tổng 10.000 dòng; chưa xóa hoặc thay đổi các file gốc. Các dòng giống nhau không chứng minh cùng một người vì không có ID. Pipeline đã kiểm tra giao nhau và ghi chi tiết cách lọc trong báo cáo đánh giá.
 
 ## Ánh xạ ban đầu vào ứng dụng
 
