@@ -4,6 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/prepare-pdf-assets.mjs",
+    "predev:database": "node scripts/prepare-pdf-assets.mjs",
+    "predev:recruitment": "node scripts/prepare-pdf-assets.mjs",
+    "prebuild": "node scripts/prepare-pdf-assets.mjs",
     "dev": "tsx backend/src/server.ts",
     "start": "tsx backend/src/server.ts",
     "build": "vite build --config frontend/vite.config.ts",
@@ -25,6 +29,7 @@
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pdfjs-dist": "6.4.299",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^8.3.0"

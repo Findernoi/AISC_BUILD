@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { AUTH_HARNESS, migrationUrl, withIdentity } from './database-preview';
 import { PREVIEW_IDENTITIES, type PreviewIdentity } from '../../shared/database';
 import { APPLICATION_COLUMNS, JOB_COLUMNS, type RecruitmentStore } from './recruitment-store';
-import type { RecruitmentApplication, RecruitmentJob } from '../../shared/recruitment';
+import type { RecruitmentApplication, RecruitmentJob, RecruitmentFile } from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
@@ -46,6 +46,13 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    application:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentApplication>(`select ${APPLICATION_COLUMNS} from public.applications where id=$1`,[id])).rows[0]??null),
+    files:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentFile>('select * from public.application_files where application_id=$1 order by created_at desc,id limit 200',[id])).rows),
+    file:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentFile>('select * from public.application_files where id=$1',[id])).rows[0]??null),
+    registerFile:input=>withIdentity(db,identity,async tx=>{
+      const keys=Object.keys(input);
+      return (await tx.query<RecruitmentFile>(`insert into public.application_files(${keys.join(',')}) values(${keys.map((_,i)=>`$${i+1}`).join(',')}) returning *`,Object.values(input))).rows[0];
+    }),
     jobs:()=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentJob>(`select ${JOB_COLUMNS} from public.jobs order by created_at desc,id limit 200`)).rows),
     applications:()=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentApplication>(`select ${APPLICATION_COLUMNS} from public.applications order by created_at desc,id limit 200`)).rows),
     apply:input=>withIdentity(db,identity,async tx=>{

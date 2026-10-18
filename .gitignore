@@ -16,6 +16,7 @@ __pycache__/
 .venv/
 venv/
 .local/
+/frontend/public/pdfjs/
 
 # Keep extracted research data; omit duplicate archives
 data/*.zip

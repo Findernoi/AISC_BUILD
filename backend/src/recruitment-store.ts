@@ -1,11 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
-import type { ApplicationInput, RecruitmentApplication, RecruitmentJob, RecruitmentUser } from '../../shared/recruitment';
+import type { ApplicationInput, RecruitmentApplication, RecruitmentJob, RecruitmentUser, RecruitmentFile, FileRegistration } from '../../shared/recruitment';
 import { ApiError } from './recruitment-validation';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
   jobs(): Promise<RecruitmentJob[]>;
   applications(): Promise<RecruitmentApplication[]>;
+  application(id:string): Promise<RecruitmentApplication | null>;
+  files(applicationId:string): Promise<RecruitmentFile[]>;
+  file(id:string): Promise<RecruitmentFile | null>;
+  registerFile(input:FileRegistration): Promise<RecruitmentFile>;
   apply(input: ApplicationInput): Promise<RecruitmentApplication>;
   createJob(input: {title:string;department:string;description:string;location:string;min_gpa:number}): Promise<RecruitmentJob>;
 }
@@ -31,6 +35,10 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async application(id) { const r=await client.from('applications').select(APPLICATION_COLUMNS).eq('id',id).maybeSingle();if(r.error)throw r.error;return r.data as RecruitmentApplication|null; },
+    async files(id) { const r=await client.from('application_files').select('*').eq('application_id',id).order('created_at',{ascending:false}).limit(200);if(r.error)throw r.error;return r.data as RecruitmentFile[]; },
+    async file(id) { const r=await client.from('application_files').select('*').eq('id',id).maybeSingle();if(r.error)throw r.error;return r.data as RecruitmentFile|null; },
+    async registerFile(input) { const r=await client.from('application_files').insert(input).select('*').single();if(r.error)throw r.error;return r.data as RecruitmentFile; },
     async jobs() { const r=await client.from('jobs').select(JOB_COLUMNS).order('created_at',{ascending:false}).limit(200); if(r.error)throw r.error; return r.data as RecruitmentJob[]; },
     async applications() { const r=await client.from('applications').select(APPLICATION_COLUMNS).order('created_at',{ascending:false}).limit(200); if(r.error)throw r.error; return r.data as RecruitmentApplication[]; },
     async apply(input) { const r=await client.from('applications').insert({...input,applicant_id:user!.id,contact_email:user!.email.toLowerCase(),university:'UIT'}).select(APPLICATION_COLUMNS).single(); if(r.error)throw r.error; return r.data as RecruitmentApplication; },

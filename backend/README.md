@@ -40,3 +40,13 @@ Tách routes, controllers, services và repositories trong `src/` khi triển kh
 - `POST /local-session`, `POST /logout`: phiên mẫu chỉ có trong local mode. Cloud đăng nhập/đăng xuất qua Supabase SDK.
 
 Chi tiết tại [database/README.md](database/README.md#luong-nop-ho-so-qua-api). Chưa chuyển các màn hình chấm điểm cũ sang API.
+
+## CV và minh chứng
+
+- `GET /api/recruitment/applications/:id/files`: danh sách tệp qua RLS.
+- `POST /api/recruitment/applications/:id/files?kind=cv|english|achievement`: body nhị phân `application/octet-stream`, tên UTF-8 mã hóa URL trong header `X-File-Name`. Chỉ ứng viên sở hữu hồ sơ được thêm tệp.
+- `GET /api/recruitment/files/:id/content`: chủ hồ sơ/HR tải bản gốc sau kiểm tra quyền, size và SHA-256. Không trả URL public.
+
+Local lưu bytes tại `.local/uploads/` và metadata tại `.local/recruitment/`; cả hai đều bị Git ignore. Cloud cần migration `202610180003_private_documents.sql` và service-role key chỉ trên server cho các thao tác storage đã được API kiểm tra quyền. Metadata vẫn đọc/ghi bằng JWT người gọi, không dùng service-role CRUD database.
+
+Frontend dùng PDF.js tải khi mở PDF; fonts/codecs được chuẩn bị tự động trước `npm run dev`, `dev:database`, `dev:recruitment` và `build`. Tệp runtime PDF.js trong `frontend/public/pdfjs/` là tài nguyên sinh từ npm, không commit.

@@ -14,3 +14,10 @@ export interface RecruitmentApplication extends ApplicationInput {
   created_at: string; revision: number;
 }
 export interface RecruitmentSession { user: RecruitmentUser | null; mode: 'local' | 'supabase'; configured: boolean; }
+export type EvidenceKind = 'cv' | 'english' | 'achievement';
+export interface RecruitmentFile {
+  id: string; application_id: string; uploaded_by: string; kind: EvidenceKind;
+  bucket: string; object_path: string; original_name: string;
+  mime_type: 'application/pdf' | 'image/png' | 'image/jpeg'; byte_size: number; sha256: string; created_at: string;
+}
+export type FileRegistration = Omit<RecruitmentFile,'id'|'bucket'|'created_at'>;

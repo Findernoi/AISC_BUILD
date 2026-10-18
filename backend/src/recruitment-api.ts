@@ -1,16 +1,18 @@
 import { randomBytes } from 'node:crypto';
-import { Router, type Request, type Response } from 'express';
+import { Router, raw, type Request, type Response, type ErrorRequestHandler } from 'express';
 import type { PGlite } from '@electric-sql/pglite';
 import { PREVIEW_IDENTITIES, type PreviewIdentity } from '../../shared/database';
 import { ApiError, validateApplication, validateJob } from './recruitment-validation';
 import { supabaseStore, type RecruitmentStore } from './recruitment-store';
+import { cloudFileStorage, diskFileStorage, isUuid, MAX_FILE_BYTES, readEvidence, uploadEvidence, type FileStorage } from './recruitment-files';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
-export function createRecruitmentRouter(options: {local:boolean; database?:()=>Promise<PGlite>}) {
+export function createRecruitmentRouter(options: {local:boolean; database?:()=>Promise<PGlite>; storage?:FileStorage}) {
   const router=Router();
   const sessions=new Map<string,{identity:PreviewIdentity;expires:number}>();
   const local=options.local && process.env.NODE_ENV !== 'production';
+  const fileStorage=()=>options.storage ?? (local?diskFileStorage():cloudFileStorage());
   const cookie=(req:Request)=>req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith(`${COOKIE}=`))?.slice(COOKIE.length+1);
   router.use((req,res,next)=>{
     res.setHeader('Cache-Control','no-store');
@@ -84,5 +86,41 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
     if(!/^[^@\s]+@gm\.uit\.edu\.vn$/i.test(db.user.email))throw new ApiError(403,'Cần tài khoản có email UIT đã xác nhận.');
     res.status(201).json({application:await db.apply(validateApplication(req.body))});
   }));
+  router.get('/applications/:id/files',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(!await db.application(req.params.id))throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    res.json({files:await db.files(req.params.id)});
+  }));
+  router.post('/applications/:id/files',(req,res,next)=>{
+    void handle(async()=>{
+      if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+      const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+      const app=await db.application(req.params.id);
+      if(!app)throw new ApiError(404,'Không tìm thấy hồ sơ.');
+      if(db.user.role!=='candidate'||app.applicant_id!==db.user.id)throw new ApiError(403,'Chỉ chủ hồ sơ được thêm tệp.');
+      res.locals.fileStore=db;next();
+    })(req,res);
+  },raw({type:'application/octet-stream',limit:MAX_FILE_BYTES}),handle(async(req,res)=>{
+    let name:string;
+    try{name=decodeURIComponent(req.get('X-File-Name')??'');}catch{throw new ApiError(400,'Tên tệp không hợp lệ.');}
+    const file=await uploadEvidence(res.locals.fileStore,fileStorage(),String(req.params.id),req.body,name,req.query.kind);
+    res.status(201).json({file});
+  }));
+  router.get('/files/:id/content',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã tệp không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    const {file,bytes}=await readEvidence(db,fileStorage(),req.params.id);
+    res.setHeader('Content-Type',file.mime_type);
+    res.setHeader('X-Content-Type-Options','nosniff');
+    res.setHeader('Content-Security-Policy',"sandbox; default-src 'none'");
+    res.setHeader('Content-Disposition',`attachment; filename="document"; filename*=UTF-8''${encodeURIComponent(file.original_name).replace(/['()*]/g,c=>`%${c.charCodeAt(0).toString(16)}`)}`);
+    res.send(bytes);
+  }));
+  const bodyError:ErrorRequestHandler=(error,_req,res,next)=>{
+    if(error.type==='entity.too.large'){res.status(413).json({error:'Mỗi tệp tối đa 10 MiB.'});return;}
+    next(error);
+  };
+  router.use(bodyError);
   return router;
 }
