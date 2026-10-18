@@ -50,3 +50,11 @@ Chi tiết tại [database/README.md](database/README.md#luong-nop-ho-so-qua-api
 Local lưu bytes tại `.local/uploads/` và metadata tại `.local/recruitment/`; cả hai đều bị Git ignore. Cloud cần migration `202610180003_private_documents.sql` và service-role key chỉ trên server cho các thao tác storage đã được API kiểm tra quyền. Metadata vẫn đọc/ghi bằng JWT người gọi, không dùng service-role CRUD database.
 
 Frontend dùng PDF.js tải khi mở PDF; fonts/codecs được chuẩn bị tự động trước `npm run dev`, `dev:database`, `dev:recruitment` và `build`. Tệp runtime PDF.js trong `frontend/public/pdfjs/` là tài nguyên sinh từ npm, không commit.
+
+## Đọc/đối chiếu tự động
+
+`POST /api/recruitment/files/:id/check` đọc tệp đã lưu sau xác thực/RLS và kiểm tra hash; body `{}` dùng cache còn hợp lệ, `{ "force": true }` đọc lại. `GET /api/recruitment/files/:id/check` lấy kết quả mới nhất và cờ `stale`. Client không được gửi kết quả/điểm hoặc cờ xác minh. Cùng quyền chủ hồ sơ/HR như tải tệp.
+
+Upload có thể gửi khai báo JSON mã hóa URL trong header `X-Evidence-Declaration`: credential, score, issued_on, reference cho chứng chỉ; title/issuer cho thành tích. Tên lấy từ hồ sơ phía server. Khai báo gắn bất biến với phiên bản tệp; thêm bản mới nếu cần sửa thông tin liên quan tới tệp.
+
+OCR chạy trong worker Node tách biệt, giới hạn 5 trang, 12 megapixel cho ảnh đầu vào và 60 giây/tệp. Mỗi process xử lý một tệp tại một thời điểm, báo bận thay vì xếp hàng vô hạn. Model Anh/Việt đi kèm npm, được chép vào `.local/ocr-traineddata/` khi cần; không tải từ CDN hoặc gọi API AI lúc đọc hồ sơ. Production cần môi trường Node hỗ trợ `@napi-rs/canvas`, đủ CPU/RAM và quyền ghi thư mục model local.

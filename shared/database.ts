@@ -1,4 +1,5 @@
 export const DATABASE_TABLES = [
+  { name: 'evidence_checks', label: 'Đối chiếu tự động', purpose: 'OCR/text và đối chiếu khai báo; không xác minh thật/giả, không tự quyết định tuyển.', group: 'Minh chứng', links: ['application_files','applications'], candidate: 'Đọc kết quả của tệp thuộc hồ sơ mình', hr: 'Xem kết quả và kiểm tra bản gốc khi cần' },
   { name: 'profiles', label: 'Hồ sơ tài khoản', purpose: 'Thông tin liên hệ; không chứa cột tự cấp vai trò HR.', group: 'Tài khoản', links: ['auth.users'], candidate: 'Đọc/sửa tên và điện thoại của mình', hr: 'Đọc hồ sơ tài khoản' },
   { name: 'jobs', label: 'Vị trí tuyển dụng', purpose: 'JD, yêu cầu, GPA tối thiểu và trạng thái mở tuyển.', group: 'Ứng tuyển', links: ['auth.users'], candidate: 'Đọc vị trí đang mở', hr: 'Tạo và cập nhật vị trí' },
   { name: 'applications', label: 'Hồ sơ ứng tuyển', purpose: 'Thông tin tự khai tại lúc nộp; một hồ sơ/người/vị trí, có revision.', group: 'Ứng tuyển', links: ['profiles','jobs'], candidate: 'Nộp bằng email UIT đã xác nhận; chỉ đọc hồ sơ của mình', hr: 'Đọc và cập nhật trạng thái/nội dung có lưu lịch sử' },

@@ -206,3 +206,11 @@ npm run dev
 ```
 
 Open the local URL shown by Vite and the Express server and test the Supabase connection.
+
+## Đọc và đối chiếu minh chứng tự động
+
+Cổng ứng tuyển tự đọc tệp mới sau upload: PDF có lớp chữ dùng PDF.js; ảnh/PDF scan dùng Tesseract Anh/Việt ngay trên server. Không gửi tài liệu ra dịch vụ OCR/AI bên ngoài. Với chứng chỉ/thành tích, ứng viên khai thông tin để đối chiếu tại form thêm tệp. Họ tên lấy từ hồ sơ, không cho khai đè qua header.
+
+Mở **CV và minh chứng → Kết quả đọc và đối chiếu tự động** để xem từng trường khai báo/đọc được và căn cứ theo trang. Kết quả chỉ là khớp/sai lệch/chưa rõ/không đọc được; chưa xác minh từ đơn vị cấp, không tự cộng điểm hoặc loại ứng viên. HR vẫn cần xử lý trường hợp chưa rõ và xác minh tính thật khi cần.
+
+Chạy local vẫn bằng `npm run dev:recruitment`; dữ liệu OCR và kết quả nằm trên máy. Cloud cần migration thứ tư `202610180004_evidence_checks.sql`; chưa tự áp dụng. Xem [phạm vi và giới hạn](backend/database/README.md#doc-va-doi-chieu-tu-dong).

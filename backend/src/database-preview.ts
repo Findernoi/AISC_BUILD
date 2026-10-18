@@ -9,6 +9,7 @@ export const migrationUrl = new URL(`../database/migrations/${MIGRATION}`, impor
 export const AUTH_HARNESS = `
   create role anon nologin;
   create role authenticated nologin;
+  create role service_role nologin bypassrls;
   create schema auth;
   create table auth.users (
     id uuid primary key, email text unique not null, email_confirmed_at timestamptz,
@@ -24,6 +25,7 @@ export async function createPreviewDatabase(seed = true) {
   const db = new PGlite();
   await db.exec(AUTH_HARNESS);
   await db.exec(await readFile(migrationUrl, 'utf8'));
+  await db.exec(await readFile(new URL('../database/migrations/202610180004_evidence_checks.sql',import.meta.url),'utf8'));
   if (seed) await seedPreview(db);
   return db;
 }

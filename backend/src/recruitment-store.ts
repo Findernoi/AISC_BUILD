@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ApplicationInput, RecruitmentApplication, RecruitmentJob, RecruitmentUser, RecruitmentFile, FileRegistration } from '../../shared/recruitment';
 import { ApiError } from './recruitment-validation';
+import type { EvidenceCheck, CheckRegistration } from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  check(fileId:string):Promise<EvidenceCheck|null>;
+  saveCheck(input:CheckRegistration):Promise<EvidenceCheck>;
   jobs(): Promise<RecruitmentJob[]>;
   applications(): Promise<RecruitmentApplication[]>;
   application(id:string): Promise<RecruitmentApplication | null>;
@@ -35,6 +38,13 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async check(id) {const r=await client.from('evidence_checks').select('*').eq('file_id',id).order('created_at',{ascending:false}).limit(1).maybeSingle();if(r.error)throw r.error;return r.data as EvidenceCheck|null;},
+    async saveCheck(input) {
+      const service=process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if(!service)throw new ApiError(503,'Chưa cấu hình lưu kết quả đối chiếu trên server.');
+      const writer=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+      const r=await writer.from('evidence_checks').insert(input).select('*').single();if(r.error)throw r.error;return r.data as EvidenceCheck;
+    },
     async application(id) { const r=await client.from('applications').select(APPLICATION_COLUMNS).eq('id',id).maybeSingle();if(r.error)throw r.error;return r.data as RecruitmentApplication|null; },
     async files(id) { const r=await client.from('application_files').select('*').eq('application_id',id).order('created_at',{ascending:false}).limit(200);if(r.error)throw r.error;return r.data as RecruitmentFile[]; },
     async file(id) { const r=await client.from('application_files').select('*').eq('id',id).maybeSingle();if(r.error)throw r.error;return r.data as RecruitmentFile|null; },

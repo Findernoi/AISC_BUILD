@@ -98,3 +98,20 @@ API xác minh JWT và dùng RLS của `applications`/`application_files` để x
 Khi metadata insert thất bại, API cố xóa bytes chưa đăng ký; trường hợp cleanup thất bại được ghi log bằng object path để quản trị viên dọn orphan sau. Storage và database không phải cùng transaction nên mất điện/lỗi giữa hai bước vẫn có thể tạo orphan; chưa có worker tự đối soát. Khi tải tệp, API xác minh owner/path, kích thước, SHA-256 và định dạng trước khi trả nội dung có `Cache-Control: no-store`, `nosniff` và attachment. Không tạo URL public hoặc signed URL. Sau khi người có quyền đã tải tệp, ứng dụng không thể thu hồi bản sao họ lưu trên máy.
 
 Các kiểm thử local kiểm tra HTTP upload/download, RLS giữa hai ứng viên và HR, tệp sai định dạng/quá lớn, hash bị thay, rollback metadata, lưu ổ đĩa và policy Storage qua catalog harness. Chưa kiểm thử dịch vụ Supabase Storage cloud thật.
+
+<a id="doc-va-doi-chieu-tu-dong"></a>
+## Đọc và đối chiếu tự động
+
+Migration `202610180004_evidence_checks.sql` thêm `application_files.declared_fields` và bảng `evidence_checks` có RLS. Local tự nâng schema khi mở database; cloud cần quản trị viên áp dụng migration sau ba migration trước. Schema preview local cũng có bảng kết quả này. Không nhập tệp/hồ sơ cũ sang dịch vụ ngoài.
+
+Luồng cổng ứng tuyển: ứng viên khai thông tin → lưu tệp/hash → tự gửi yêu cầu đọc/đối chiếu → hiển thị kết quả. Tệp vẫn lưu thành công khi OCR lỗi/bận; có thể bấm đọc lại sau. Tệp cũ có nút khởi chạy kiểm tra. Kết quả được lưu theo file ID, SHA-256, hash thông tin khai báo/họ tên và phiên bản engine. Sửa tên hồ sơ làm kết quả cũ có cờ `stale`; thêm tệp tạo ID mới và không kế thừa kết quả của tệp cũ. Kiểm tra không thay đổi trạng thái ứng tuyển hoặc điểm tuyển dụng.
+
+PDF.js đọc lớp chữ; trang không có đủ chữ được render rồi OCR bằng Tesseract Anh/Việt. Chỉ xử lý tối đa 5 trang, đánh dấu chưa đầy đủ nếu còn trang. Worker có thời hạn 60 giây và giới hạn heap JS; ảnh tối đa 12 megapixel, trang PDF được thu nhỏ trước OCR. Lớp chữ PDF có thể khác phần nhìn thấy nên kết quả khớp không chứng minh tài liệu thật. OCR/parser có thể sai; lỗi đọc chuyển về không đọc được/cần HR xem, không tự từ chối ứng viên.
+
+Bộ quy tắc v1 nhận các nhãn rõ ràng: Name/Full name/Candidate name/Họ và tên; IELTS/TOEIC/TOEFL; Overall Band Score/Total Score/Điểm; Date of issue/Ngày cấp; TRF Number/Certificate Number/Mã chứng chỉ; Achievement/Award/Thành tích và Issuer/Đơn vị cấp. Dạng ngày ISO hoặc ngày/tháng/năm. Bố cục/nhãn khác, nhiều giá trị mâu thuẫn hoặc thiếu khai báo dẫn tới cần HR xem. Chuẩn hóa dấu và chữ hoa/thường khi so tên, không đoán tên gần giống. Chỉ kết luận các trường đã khai và đọc được; không suy ra kinh nghiệm, ngành, tính thật hoặc tình trạng sinh viên.
+
+Độ rõ OCR dưới 85 hoặc nhiều giá trị cho cùng trường được gắn chưa rõ. Đây là ngưỡng kỹ thuật ban đầu, không phải xác suất tài liệu thật và chưa hiệu chỉnh trên tập chứng chỉ UIT. Không tự áp dụng thời hạn chứng chỉ vì chưa có chính sách tuyển dụng cụ thể. Chưa nối IELTS/ETS hay nguồn cấp nào; `issuer_verified` luôn false. Chưa tích hợp OCR với điểm vòng 1, kết quả duyệt HR hoặc quyết định tuyển dụng.
+
+Ứng viên chỉ xem kết quả của tệp mình; HR xem hồ sơ được phép. Không cấp insert/update/delete `evidence_checks` cho client kể cả HR. Chỉ API server ghi kết quả đã tính sau khi xác thực và đọc tệp bằng RLS; Supabase dùng service-role cho insert có giới hạn vào bảng kết quả này, còn CRUD hồ sơ và metadata tệp tiếp tục dùng JWT người gọi. Đây là ngoại lệ server ghi kết quả máy tính, không cấp quyền ghi tuỳ ý từ request. Lưu lịch sử các lần đọc, người khởi chạy/thời gian và căn cứ theo trang trong bảng riêng; không tự tạo dấu duyệt `evidence_reviews`.
+
+Kiểm thử bao gồm OCR thật trên ảnh tổng hợp, đọc PDF thật, tên có dấu, điểm 0, sai lệch điểm/tên, thiếu trường, nhiều giá trị, điểm OCR thấp, trang giới hạn, nội dung giả lệnh trong tài liệu, cache/stale, RLS và API không nhận kết quả giả. Các fixture là dữ liệu kiểm thử, chưa phải đánh giá độ chính xác trên minh chứng thực tế. Chưa chạy migration hoặc kiểm thử OCR/Supabase cloud thật.

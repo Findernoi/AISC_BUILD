@@ -31,7 +31,7 @@ before(async()=>{
   db=new PGlite();await initializeLocalRecruitment(db);
   const candidate=await localStore('candidate_a',db),job=(await candidate.jobs())[0];
   const app=await candidate.apply({job_id:job.id,full_name:'Fake upload candidate',phone:'',major:'AI',gpa:3.5,gpa_scale:'4.0',graduation_year:2027,project_count:null,experience_months:null,skills:[],project_description:''});appA=app.id;
-  const appServer=express();appServer.use('/api/recruitment',express.json({limit:'32kb'}),createRecruitmentRouter({local:true,database:async()=>db,storage}));
+  const appServer=express();appServer.use('/api/recruitment',express.json({limit:'32kb'}),createRecruitmentRouter({local:true,database:async()=>db,storage,extract:async()=>({pages:[{page:1,text:'Name: Fake upload candidate\nSynthetic CV for testing',method:'pdf-text',confidence:null}],partial:false})}));
   server=await new Promise<Server>(resolveServer=>{const s=appServer.listen(0,'127.0.0.1',()=>resolveServer(s));});
   origin=`http://127.0.0.1:${(server.address() as {port:number}).port}`;base=origin+'/api/recruitment';
   for(const id of ['candidate_a','candidate_b','hr']){const r=await fetch(base+'/local-session',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({identity:id})});cookies[id]=r.headers.get('set-cookie')!.split(';')[0];await r.json();}
@@ -118,4 +118,15 @@ test('storage migration creates a private bucket and blocks direct client access
     assert.deepEqual(rows.rows.map(r=>r.id),['other-file']);
     await assert.rejects(withIdentity(db,identity,tx=>tx.query("insert into storage.objects(id,bucket_id) values('forged','application-documents')")),/row-level security/);
   }
+});
+
+test('check endpoints enforce file ownership, reject supplied results and expose stale results without changing application status',async()=>{
+  const run=await fetch(`${base}/files/${fileId}/check`,{method:'POST',headers:{...headers('candidate_a'),'Content-Type':'application/json'},body:'{}'});
+  assert.equal(run.status,200);const {check}=await run.json();assert.equal(check.result.status,'matched');assert.equal(check.result.issuer_verified,false);
+  const other=await fetch(`${base}/files/${fileId}/check`,{headers:headers('candidate_b')});assert.equal(other.status,404);
+  assert.equal((await fetch(`${base}/files/${fileId}/check`)).status,401);
+  const forged=await fetch(`${base}/files/${fileId}/check`,{method:'POST',headers:{...headers('candidate_a'),'Content-Type':'application/json'},body:JSON.stringify({result:{issuer_verified:true}})});assert.equal(forged.status,400);
+  await db.query('update public.applications set full_name=$1 where id=$2',['New claimant',appA]);
+  const old=await fetch(`${base}/files/${fileId}/check`,{headers:headers('hr')});assert.equal((await old.json()).check.stale,true);
+  assert.equal((await (await localStore('candidate_a',db)).application(appA))!.status,'pending');
 });

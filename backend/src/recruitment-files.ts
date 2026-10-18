@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import { dirname, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import type { EvidenceKind, RecruitmentFile } from '../../shared/recruitment';
+import type { EvidenceKind, RecruitmentFile, EvidenceDeclaration } from '../../shared/recruitment';
 import { ApiError } from './recruitment-validation';
 import type { RecruitmentStore } from './recruitment-store';
 
@@ -60,7 +60,7 @@ export function cloudFileStorage():FileStorage {
     async remove(path) {validatePath(path);const r=await bucket.remove([path]);if(r.error)throw new Error('Storage cleanup failed');},
   };
 }
-export async function uploadEvidence(store:RecruitmentStore,storage:FileStorage,applicationId:string,bytes:Buffer,name:unknown,kind:unknown) {
+export async function uploadEvidence(store:RecruitmentStore,storage:FileStorage,applicationId:string,bytes:Buffer,name:unknown,kind:unknown,declaration:EvidenceDeclaration={}) {
   if(!store.user)throw new ApiError(401,'Hãy đăng nhập trước.');
   const app=await store.application(applicationId);
   if(!app)throw new ApiError(404,'Không tìm thấy hồ sơ.');
@@ -70,7 +70,7 @@ export async function uploadEvidence(store:RecruitmentStore,storage:FileStorage,
   const object_path=`${store.user.id}/${app.id}/${randomUUID()}.${checked.extension}`;
   await storage.put(object_path,bytes,checked.mime);
   try {
-    return await store.registerFile({application_id:app.id,uploaded_by:store.user.id,kind:checked.kind,object_path,original_name:checked.name,mime_type:checked.mime,byte_size:bytes.length,sha256:digest(bytes)});
+    return await store.registerFile({application_id:app.id,uploaded_by:store.user.id,kind:checked.kind,object_path,original_name:checked.name,mime_type:checked.mime,byte_size:bytes.length,sha256:digest(bytes),declared_fields:declaration});
   }catch(error){
     try{await storage.remove(object_path);}catch{console.error('Unregistered file requires storage cleanup:',object_path);}
     throw error;

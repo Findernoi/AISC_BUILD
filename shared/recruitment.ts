@@ -19,5 +19,15 @@ export interface RecruitmentFile {
   id: string; application_id: string; uploaded_by: string; kind: EvidenceKind;
   bucket: string; object_path: string; original_name: string;
   mime_type: 'application/pdf' | 'image/png' | 'image/jpeg'; byte_size: number; sha256: string; created_at: string;
+  declared_fields?: EvidenceDeclaration;
 }
+export interface EvidenceDeclaration { credential?: 'IELTS'|'TOEIC'|'TOEFL'; score?: string; issued_on?: string; reference?: string; title?: string; issuer?: string; }
+export interface EvidencePage { page:number; text:string; method:'pdf-text'|'ocr'; confidence:number|null; }
+export interface EvidenceField { key:string; label:string; declared:string; extracted:string|null; outcome:'match'|'mismatch'|'unclear'; page:number|null; excerpt:string; }
+export interface EvidenceResult {
+  status:'matched'|'mismatch'|'unclear'|'unreadable'; issuer_verified:false; fields:EvidenceField[]; pages:EvidencePage[];
+  notes:string[]; engine:string; partial:boolean;
+}
+export interface EvidenceCheck { id:string; file_id:string; application_id:string; file_sha256:string; claims_hash:string; created_by:string; created_at:string; result:EvidenceResult; stale?:boolean; }
+export type CheckRegistration=Omit<EvidenceCheck,'id'|'created_at'|'stale'>;
 export type FileRegistration = Omit<RecruitmentFile,'id'|'bucket'|'created_at'>;

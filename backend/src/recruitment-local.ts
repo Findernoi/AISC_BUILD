@@ -4,12 +4,12 @@ import { PGlite } from '@electric-sql/pglite';
 import { AUTH_HARNESS, migrationUrl, withIdentity } from './database-preview';
 import { PREVIEW_IDENTITIES, type PreviewIdentity } from '../../shared/database';
 import { APPLICATION_COLUMNS, JOB_COLUMNS, type RecruitmentStore } from './recruitment-store';
-import type { RecruitmentApplication, RecruitmentJob, RecruitmentFile } from '../../shared/recruitment';
+import type { RecruitmentApplication, RecruitmentJob, RecruitmentFile, EvidenceCheck } from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
   const exists=await db.query<{relation:string|null}>(`select to_regclass('public.applications')::text as relation`);
-  if (exists.rows[0].relation) return;
+  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);return;}
   // Local-only bootstrap. Never run this harness against Supabase.
   const source=(await readFile(migrationUrl,'utf8'))+'\n'+(await readFile(roleMigrationUrl,'utf8'));
   await db.transaction(async tx=>{
@@ -27,6 +27,13 @@ export async function initializeLocalRecruitment(db: PGlite) {
       ('Thực tập sinh AI','AI','Phát triển ứng dụng AI và xử lý dữ liệu. Vị trí mẫu để thử nộp hồ sơ.',ARRAY['Python','Machine Learning'],3.2),
       ('Thực tập sinh Backend','Backend','Xây dựng API và làm việc với cơ sở dữ liệu. Vị trí mẫu để thử nộp hồ sơ.',ARRAY['Node.js','SQL'],3.0)`);
   });
+  await ensureEvidenceMigration(db);
+}
+async function ensureEvidenceMigration(db:PGlite) {
+  const found=await db.query<{relation:string|null}>("select to_regclass('public.evidence_checks')::text as relation");
+  if(found.rows[0].relation)return;
+  await db.exec("do $$ begin if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role nologin bypassrls; end if; end $$;");
+  await db.exec(await readFile(new URL('../database/migrations/202610180004_evidence_checks.sql',import.meta.url),'utf8'));
 }
 let database: Promise<PGlite> | undefined;
 export function localRecruitmentDatabase() {
@@ -46,6 +53,11 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    check:id=>withIdentity(db,identity,async tx=>(await tx.query<EvidenceCheck>('select * from public.evidence_checks where file_id=$1 order by created_at desc,id desc limit 1',[id])).rows[0]??null),
+    saveCheck:async input=>{
+      // Privileged insert only for server-produced, advisory extraction; caller already authorized the file through RLS.
+      return (await db.query<EvidenceCheck>('insert into public.evidence_checks(file_id,application_id,file_sha256,claims_hash,created_by,result) values($1,$2,$3,$4,$5,$6) returning *',[input.file_id,input.application_id,input.file_sha256,input.claims_hash,input.created_by,JSON.stringify(input.result)])).rows[0];
+    },
     application:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentApplication>(`select ${APPLICATION_COLUMNS} from public.applications where id=$1`,[id])).rows[0]??null),
     files:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentFile>('select * from public.application_files where application_id=$1 order by created_at desc,id limit 200',[id])).rows),
     file:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentFile>('select * from public.application_files where id=$1',[id])).rows[0]??null),

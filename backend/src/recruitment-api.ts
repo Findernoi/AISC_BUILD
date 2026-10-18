@@ -5,10 +5,11 @@ import { PREVIEW_IDENTITIES, type PreviewIdentity } from '../../shared/database'
 import { ApiError, validateApplication, validateJob } from './recruitment-validation';
 import { supabaseStore, type RecruitmentStore } from './recruitment-store';
 import { cloudFileStorage, diskFileStorage, isUuid, MAX_FILE_BYTES, readEvidence, uploadEvidence, type FileStorage } from './recruitment-files';
+import { validateDeclaration, checkEvidence, claimsHash, type extractEvidence } from './evidence-analysis';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
-export function createRecruitmentRouter(options: {local:boolean; database?:()=>Promise<PGlite>; storage?:FileStorage}) {
+export function createRecruitmentRouter(options: {local:boolean; database?:()=>Promise<PGlite>; storage?:FileStorage; extract?:typeof extractEvidence}) {
   const router=Router();
   const sessions=new Map<string,{identity:PreviewIdentity;expires:number}>();
   const local=options.local && process.env.NODE_ENV !== 'production';
@@ -104,7 +105,11 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
   },raw({type:'application/octet-stream',limit:MAX_FILE_BYTES}),handle(async(req,res)=>{
     let name:string;
     try{name=decodeURIComponent(req.get('X-File-Name')??'');}catch{throw new ApiError(400,'Tên tệp không hợp lệ.');}
-    const file=await uploadEvidence(res.locals.fileStore,fileStorage(),String(req.params.id),req.body,name,req.query.kind);
+    const header=req.get('X-Evidence-Declaration')??encodeURIComponent('{}');
+    if(header.length>6000)throw new ApiError(400,'Thông tin khai báo quá dài.');
+    let declaration;
+    try{declaration=JSON.parse(decodeURIComponent(header));}catch{throw new ApiError(400,'Thông tin minh chứng không hợp lệ.');}
+    const file=await uploadEvidence(res.locals.fileStore,fileStorage(),String(req.params.id),req.body,name,req.query.kind,validateDeclaration(declaration));
     res.status(201).json({file});
   }));
   router.get('/files/:id/content',handle(async(req,res)=>{
@@ -116,6 +121,20 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
     res.setHeader('Content-Security-Policy',"sandbox; default-src 'none'");
     res.setHeader('Content-Disposition',`attachment; filename="document"; filename*=UTF-8''${encodeURIComponent(file.original_name).replace(/['()*]/g,c=>`%${c.charCodeAt(0).toString(16)}`)}`);
     res.send(bytes);
+  }));
+  router.get('/files/:id/check',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã tệp không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    const file=await db.file(req.params.id);if(!file)throw new ApiError(404,'Không tìm thấy tệp.');
+    const app=await db.application(file.application_id);if(!app)throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    const check=await db.check(file.id);
+    res.json({check:check?{...check,stale:check.claims_hash!==claimsHash(app,file)||check.file_sha256!==file.sha256}:null});
+  }));
+  router.post('/files/:id/check',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã tệp không hợp lệ.');
+    if(req.body&&(Object.keys(req.body).some(k=>k!=='force')||(req.body.force!==undefined&&typeof req.body.force!=='boolean')))throw new ApiError(400,'Chỉ được yêu cầu đọc lại; không được gửi kết quả đối chiếu.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    res.json({check:await checkEvidence(db,fileStorage(),req.params.id,options.extract,req.body?.force===true)});
   }));
   const bodyError:ErrorRequestHandler=(error,_req,res,next)=>{
     if(error.type==='entity.too.large'){res.status(413).json({error:'Mỗi tệp tối đa 10 MiB.'});return;}
