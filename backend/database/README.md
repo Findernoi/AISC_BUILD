@@ -1,5 +1,9 @@
 # Database tuyển dụng giai đoạn 1
 
+## Thống kê và kế hoạch HR (migration 10)
+
+`202610180010_recruitment_analytics.sql` bổ sung RPC chỉ đọc `recruitment_analytics(uuid,date,date)`, kiểm tra HR trong database; local tự áp dụng sau migration 9, chưa áp dụng cloud. API `GET /api/recruitment/analytics` tổng hợp toàn bộ dữ liệu trong bộ lọc, lấy offer mới nhất mỗi hồ sơ, tách pending hợp lệ/accepted/declined và phân bổ nguồn vào theo ngày bắt đầu. Accepted chưa phải đã đi làm. Giả định 75% chỉ áp dụng pending hợp lệ tương lai. Xem [hợp đồng, công thức, kịch bản và giới hạn](../../docs/ANALYTICS_DEMO.md).
+
 ## Offer trong ứng dụng (migration 9)
 
 `202610180009_offers.sql` bổ sung `recruitment_offers`, RLS đọc theo chủ hồ sơ/HR và các RPC `read_offers`, `issue_offer`, `respond_offer`. Chạy sau migration 1–8; local tự áp dụng, chưa áp dụng cloud. Thông báo trong ứng dụng, không gửi email thật. Xem [kịch bản demo, hợp đồng API, trạng thái và giới hạn](../../docs/OFFERS_DEMO.md).

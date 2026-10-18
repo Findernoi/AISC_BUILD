@@ -8,6 +8,7 @@ import { RoundTwoPortal } from './RoundTwoPortal';
 import { HiringDecisionPortal } from './HiringDecisionPortal';
 import {EvidenceExceptionsPortal} from './EvidenceExceptionsPortal';
 import {OfferPortal} from './OfferPortal';
+import {RecruitmentAnalyticsPortal} from './RecruitmentAnalyticsPortal';
 import { recruitmentFetch } from '../lib/recruitmentApi';
 
 async function api<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T> {
@@ -27,6 +28,7 @@ export function RecruitmentPortal() {
   const [invitations,setInvitations]=useState<InterviewInvitation[]>([]);
   const [jobId,setJobId]=useState('');
   const [version,setVersion]=useState(0);
+  const [businessVersion,setBusinessVersion]=useState(0);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
@@ -92,6 +94,7 @@ export function RecruitmentPortal() {
       const [jobData,appData,invitationData]=await Promise.all([api<{jobs:RecruitmentJob[]}>('jobs',undefined,controller.signal),api<{applications:RecruitmentApplication[]}>('applications',undefined,controller.signal),api<{invitations:InterviewInvitation[]}>('invitations',undefined,controller.signal)]);
       if(controller.signal.aborted||epoch!==sessionEpoch.current)return;
       setJobs(jobData.jobs);setApplications(appData.applications);setInvitations(invitationData.invitations);
+      setBusinessVersion(v=>v+1);
     }catch(e){if(!controller.signal.aborted&&epoch===sessionEpoch.current)throw e;}
     finally{if(businessRequest.current===controller)businessRequest.current=null;}
   };
@@ -120,6 +123,7 @@ export function RecruitmentPortal() {
           <Field label="Số dự án (không bắt buộc)"><input name="project_count" type="number" min={0} max={10000} step={1} /></Field><Field label="Số tháng kinh nghiệm (không bắt buộc)"><input name="experience_months" type="number" min={0} max={1200} step={1} /></Field>
         </div><Field label="Kỹ năng (ngăn cách bằng dấu phẩy)"><input name="skills" maxLength={2400} placeholder="Python, SQL" /></Field><Field label="Mô tả dự án"><textarea name="project_description" rows={3} maxLength={10000} /></Field><p className="text-xs text-slate-400">Nộp thông tin trước, sau đó thêm CV và minh chứng tại hồ sơ đã lưu bên dưới.</p><button className="btn-primary" disabled={busy}>{busy?'Đang lưu…':'Nộp hồ sơ vào database'}</button></form>}
       </Panel>}
+      {session.user?.role==='hr'&&<RecruitmentAnalyticsPortal jobs={jobs} refreshKey={businessVersion} />}
       {session.user?.role==='hr'&&<EvidenceExceptionsPortal onChanged={reloadBusiness} refreshKey={applications.map(a=>a.id+':'+a.revision).join(',')} />}
       {session.user?.role==='hr'&&<RoundOnePortal jobs={jobs} local={session.mode==='local'} onChanged={reloadBusiness} refreshKey={applications.map(a=>`${a.id}:${a.revision}`).join(',')} />}
       {session.user&&<RoundTwoPortal applications={applications} invitations={invitations} hr={session.user.role==='hr'} onChanged={reloadBusiness} />}

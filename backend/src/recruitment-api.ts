@@ -10,6 +10,7 @@ import type { RoundOneScope } from '../../shared/recruitment';
 import { validateRoundTwo } from './round-two-validation';
 import {validateHiringDecision,validateHiringWeights} from './hiring-validation';
 import {validateOffer,validateOfferResponse} from './offer-validation';
+import {validateAnalyticsScope} from './analytics-validation';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
@@ -83,6 +84,11 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
   router.get('/offers',handle(async(req,res)=>{
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
     res.json({offers:await db.offers()});
+  }));
+  router.get('/analytics',handle(async(req,res)=>{
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được xem thống kê tuyển dụng.');
+    res.json({report:await db.analytics(validateAnalyticsScope(req.query))});
   }));
   router.post('/applications/:id/offers',handle(async(req,res)=>{
     if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');

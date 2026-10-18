@@ -73,3 +73,13 @@ export interface RecruitmentOffer {
   status:'pending'|'superseded'|'accepted'|'declined';revision:number;issued_by:string;issued_at:string;
   responded_by:string|null;responded_at:string|null;response_note:string;candidate_name:string;actionable:boolean;
 }
+export interface RecruitmentAnalyticsScope {jobId:string|null;month:string;asOf:string;}
+export interface RecruitmentStarts {accepted:number;upcomingAccepted:number;upcomingPending:number;pastAccepted:number;pastPending:number;expectedPending:number;expectedUpcoming:number;}
+export interface RecruitmentAnalytics {
+  version:string;month:string;asOf:string;computedAt:string;jobCount:number;applications:number;
+  workflow:{applied:number;invited:number;evaluated:number;selected:number;issued:number;accepted:number};
+  offers:{pending:number;stalePending:number;accepted:number;declined:number;supersededRecords:number};
+  starts:RecruitmentStarts;
+  months:Array<{month:string;accepted:number;pending:number;expected:number}>;
+  jobs:Array<{id:string;title:string;applications:number;pending:number;accepted:number;declined:number;upcomingAccepted:number;upcomingPending:number}>;
+}

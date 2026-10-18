@@ -35,6 +35,7 @@ export function WorkforceForecast({ onManageJobs }: { onManageJobs: () => void }
     }
   };
   return <div className="space-y-6">
+    <Panel><p className="text-sm text-amber-200">Màn hình này dùng kịch bản và dữ liệu trình duyệt của demo cũ.</p><a className="mt-2 inline-block text-sm text-indigo-300 underline" href="/?view=applications#recruitment-analytics">Mở thống kê database và kế hoạch từ offer thực tế trong demo (HR)</a></Panel>
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="mb-2 text-xs uppercase tracking-widest text-indigo-300">Kịch bản doanh nghiệp giả lập · SYNTH_CO_01</p><h1 className="text-3xl font-bold">Dự báo nhu cầu nhân lực</h1><p className="mt-2 text-sm text-slate-400">Ridge Regression dự báo tổng intern tháng 10/2026 từ snapshot chốt 30/09/2026.</p></div>
       <button className="btn-secondary" onClick={onManageJobs}>Quản lý vị trí</button>

@@ -10,11 +10,12 @@ import type { RoundTwoReport } from '../../shared/recruitment';
 import type { HiringReport,HiringDecision } from '../../shared/recruitment';
 import type {EvidenceAssessment,EvidenceExceptionReport} from '../../shared/recruitment';
 import type {RecruitmentOffer} from '../../shared/recruitment';
+import type {RecruitmentAnalytics} from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
   const exists=await db.query<{relation:string|null}>(`select to_regclass('public.applications')::text as relation`);
-  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);await ensureExceptionsMigration(db);await ensureOffersMigration(db);return;}
+  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);await ensureExceptionsMigration(db);await ensureOffersMigration(db);await ensureAnalyticsMigration(db);return;}
   // Local-only bootstrap. Never run this harness against Supabase.
   const source=(await readFile(migrationUrl,'utf8'))+'\n'+(await readFile(roleMigrationUrl,'utf8'));
   await db.transaction(async tx=>{
@@ -38,6 +39,11 @@ export async function initializeLocalRecruitment(db: PGlite) {
   await ensureHiringMigration(db);
   await ensureExceptionsMigration(db);
   await ensureOffersMigration(db);
+  await ensureAnalyticsMigration(db);
+}
+async function ensureAnalyticsMigration(db:PGlite) {
+  const found=await db.query<{fn:string|null}>("select to_regprocedure('public.recruitment_analytics(uuid,date,date)')::text as fn");
+  if(!found.rows[0].fn)await db.exec(await readFile(new URL('../database/migrations/202610180010_recruitment_analytics.sql',import.meta.url),'utf8'));
 }
 async function ensureOffersMigration(db:PGlite) {
   const found=await db.query<{fn:string|null}>("select to_regprocedure('public.read_offers()')::text as fn");
@@ -83,6 +89,7 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    analytics:scope=>withIdentity(db,identity,async tx=>(await tx.query<{report:RecruitmentAnalytics}>('select public.recruitment_analytics($1::uuid,$2::date,$3::date) as report',[scope.jobId,scope.month+'-01',scope.asOf])).rows[0].report),
     offers:()=>withIdentity(db,identity,async tx=>(await tx.query<{offers:RecruitmentOffer[]}>('select public.read_offers() as offers')).rows[0].offers),
     visibleOffer:id=>withIdentity(db,identity,async tx=>(await tx.query('select id from public.recruitment_offers where id=$1',[id])).rows.length>0),
     issueOffer:(id,input)=>withIdentity(db,identity,async tx=>(await tx.query<{id:string}>('select public.issue_offer($1::uuid,$2::uuid,$3,$4::uuid,$5,$6::date,$7) as id',[id,input.expectedDecisionId,input.expectedBasis,input.expectedOfferId,input.positionTitle,input.startDate,input.content])).rows[0].id),

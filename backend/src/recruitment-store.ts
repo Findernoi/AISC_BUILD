@@ -7,9 +7,11 @@ import type { RoundTwoReport,RoundTwoMutation } from '../../shared/recruitment';
 import type { HiringReport,HiringWeights,HiringDecisionInput,HiringDecision } from '../../shared/recruitment';
 import type { EvidenceAssessment,EvidenceExceptionReport,EvidenceResolutionInput } from '../../shared/recruitment';
 import type {RecruitmentOffer,OfferInput,OfferResponseInput} from '../../shared/recruitment';
+import type {RecruitmentAnalytics,RecruitmentAnalyticsScope} from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  analytics(scope:RecruitmentAnalyticsScope):Promise<RecruitmentAnalytics>;
   offers():Promise<RecruitmentOffer[]>;
   visibleOffer(id:string):Promise<boolean>;
   issueOffer(id:string,input:OfferInput):Promise<string>;
@@ -57,6 +59,7 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async analytics(scope){const r=await client.rpc('recruitment_analytics',{job_filter:scope.jobId,target_month:scope.month+'-01',as_of:scope.asOf});if(r.error)throw r.error;return r.data as RecruitmentAnalytics;},
     async offers(){const r=await client.rpc('read_offers');if(r.error)throw r.error;return r.data as RecruitmentOffer[];},
     async visibleOffer(id){const r=await client.from('recruitment_offers').select('id').eq('id',id).maybeSingle();if(r.error)throw r.error;return Boolean(r.data);},
     async issueOffer(id,input){const r=await client.rpc('issue_offer',{target:id,expected_decision:input.expectedDecisionId,expected_basis:input.expectedBasis,expected_offer:input.expectedOfferId,position_title:input.positionTitle,start_date:input.startDate,content:input.content});if(r.error)throw r.error;return r.data as string;},

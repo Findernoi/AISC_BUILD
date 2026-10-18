@@ -7,6 +7,7 @@ import {initializeLocalRecruitment,localStore} from '../src/recruitment-local';
 import {withIdentity} from '../src/database-preview';
 import {createRecruitmentRouter} from '../src/recruitment-api';
 import {validateOffer,validateOfferResponse} from '../src/offer-validation';
+import {validateAnalyticsScope} from '../src/analytics-validation';
 import type {RecruitmentStore} from '../src/recruitment-store';
 import type {OfferInput} from '../../shared/recruitment';
 let db:PGlite,hr:RecruitmentStore,a:RecruitmentStore,b:RecruitmentStore,id:string,jobId:string;
@@ -81,10 +82,63 @@ test('HTTP issuance and response enforce A/B/HR roles, 404 for B, input checks a
   try{
     for(const who of ['candidate_a','candidate_b','hr']){const r=await call('/local-session',who,{identity:who});cookies[who]=r.headers.get('set-cookie')!.split(';')[0];await r.json();}
     assert.equal((await call('/offers','')).status,401);const body=await input(),path=`/applications/${id}/offers`;
+    const analytics='/analytics?month=2026-11&asOf=2026-10-18';
+    assert.equal((await call(analytics,'')).status,401);assert.equal((await call(analytics,'candidate_a')).status,403);
+    assert.equal((await call('/analytics?month=2026-11&asOf=2026-02-31','hr')).status,400);
+    const report=await call(analytics,'hr');assert.equal(report.status,200);assert.equal((await report.json()).report.applications,1);
     assert.equal((await call(path,'candidate_a',body)).status,403);assert.equal((await call(path,'hr',{...body,issued_by:'fake'})).status,400);
     const issued=await call(path,'hr',body);assert.equal(issued.status,201);const offerId=(await issued.json()).id,reply={expectedRevision:1,outcome:'accepted',note:''};
     assert.equal((await call(`/offers/${offerId}/respond`,'candidate_b',reply)).status,404);assert.equal((await call(`/offers/${offerId}/respond`,'hr',reply)).status,403);
     assert.equal((await (await call('/offers','candidate_b')).json()).offers.length,0);
     assert.equal((await call(`/offers/${offerId}/respond`,'candidate_a',reply)).status,200);assert.equal((await call(`/offers/${offerId}/respond`,'candidate_a',reply)).status,409);
   }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));}
+});
+
+const scope={jobId:null,month:'2026-11',asOf:'2026-10-18'};
+test('analytics counts milestones from records and never treats a hire decision as a pending offer',async()=>{
+  const report=await hr.analytics(scope);
+  assert.deepEqual(report.workflow,{applied:1,invited:1,evaluated:1,selected:1,issued:0,accepted:0});
+  assert.equal(report.offers.pending,0);assert.equal(report.starts.expectedUpcoming,0);
+  assert.equal(report.months.length,6);assert.equal(report.months[5].month,'2027-04');
+  assert.ok(!JSON.stringify(report).includes('Ứng viên thử offer'));
+  await assert.rejects(a.analytics(scope),/HR access required/);
+  await assert.rejects(b.analytics(scope),/HR access required/);
+  const blank=await hr.analytics({...scope,jobId:crypto.randomUUID()});assert.equal(blank.applications,0);assert.equal(blank.jobCount,0);assert.equal(blank.months[0].expected,0);
+});
+test('analytics counts latest offer once, preserves superseded history and excludes stale pending supply',async()=>{
+  await hr.issueOffer(id,await input());await hr.issueOffer(id,await input());
+  let report=await hr.analytics(scope);assert.equal(report.offers.pending,1);assert.equal(report.offers.supersededRecords,1);assert.equal(report.workflow.issued,1);
+  assert.equal(report.starts.expectedPending,0.75);assert.equal(report.starts.expectedUpcoming,0.75);
+  assert.equal(report.months[0].pending,1);assert.equal(report.jobs.find(j=>j.id===jobId)!.upcomingPending,1);
+  await db.query("update public.applications set phone='changed' where id=$1",[id]);report=await hr.analytics(scope);
+  assert.equal(report.offers.pending,0);assert.equal(report.offers.stalePending,1);assert.equal(report.starts.expectedUpcoming,0);
+});
+test('accepted offers supply their intended month only and past dates do not imply already working',async()=>{
+  const offerId=await hr.issueOffer(id,await input());await a.respondOffer(offerId,{expectedRevision:1,outcome:'accepted',note:''});
+  await db.query("update public.jobs set status='closed' where id=$1",[jobId]);
+  let report=await hr.analytics({...scope,jobId});assert.equal(report.offers.accepted,1);assert.equal(report.offers.pending,0);assert.equal(report.starts.upcomingAccepted,1);assert.equal(report.starts.expectedUpcoming,1);
+  report=await hr.analytics({...scope,asOf:'2026-11-02'});assert.equal(report.starts.upcomingAccepted,1);
+  report=await hr.analytics({...scope,asOf:'2026-11-03'});assert.equal(report.starts.pastAccepted,1);assert.equal(report.starts.upcomingAccepted,0);assert.equal(report.months[0].expected,0);
+  report=await hr.analytics({...scope,month:'2026-12'});assert.equal(report.starts.accepted,0);assert.equal(report.offers.accepted,1);
+  await initializeLocalRecruitment(db);assert.equal((await hr.analytics(scope)).starts.upcomingAccepted,1);
+});
+test('declined and past pending offers never enter future supply',async()=>{
+  const offerId=await hr.issueOffer(id,await input());
+  let report=await hr.analytics({...scope,asOf:'2026-11-03'});assert.equal(report.starts.pastPending,1);assert.equal(report.starts.expectedUpcoming,0);
+  await a.respondOffer(offerId,{expectedRevision:1,outcome:'declined',note:''});report=await hr.analytics(scope);
+  assert.equal(report.offers.declined,1);assert.equal(report.offers.accepted,0);assert.equal(report.starts.expectedUpcoming,0);assert.equal(report.workflow.selected,1);
+});
+test('analytics totals include more than 200 applications and jobs without leaking candidate fields',async()=>{
+  await db.query(`with inserted as (insert into public.jobs(title,department,created_by) select 'Bulk '||n,'AI',$1::uuid from generate_series(1,205) n returning id)
+    insert into public.applications(job_id,applicant_id,full_name,contact_email,major,gpa,gpa_scale,graduation_year)
+    select id,$2::uuid,'Bulk candidate','bulk@gm.uit.edu.vn','AI',4,'4.0',2027 from inserted`,[hr.user!.id,a.user!.id]);
+  const report=await hr.analytics(scope);assert.equal(report.applications,206);assert.equal(report.workflow.applied,206);assert.equal(report.jobCount,207);assert.equal(report.jobs.length,200);
+  assert.equal((await hr.analytics({...scope,jobId})).applications,1);assert.ok(!JSON.stringify(report).includes('contact_email'));
+});
+test('analytics validates calendar dates, query shapes, RPC permissions and December rollover',async()=>{
+  assert.deepEqual(validateAnalyticsScope({month:'2026-12',asOf:'2026-10-18'}),{...scope,month:'2026-12'});
+  for(const bad of [{month:'2026-13',asOf:'2026-10-18'},{month:'2026-11',asOf:'2026-02-31'},{month:'2026-11',asOf:'2026-10-18',jobId:['all']},{month:'2026-11',asOf:'2026-10-18',role:'hr'}])assert.throws(()=>validateAnalyticsScope(bad));
+  await assert.rejects(withIdentity(db,'hr',tx=>tx.query("select public.recruitment_analytics(null,'2026-11-02','2026-10-18')")),/Invalid analytics dates/);
+  await assert.rejects(withIdentity(db,'anonymous',tx=>tx.query("select public.recruitment_analytics(null,'2026-11-01','2026-10-18')")),/permission denied/);
+  assert.deepEqual((await hr.analytics({...scope,month:'2026-12'})).months.map(m=>m.month),['2026-12','2027-01','2027-02','2027-03','2027-04','2027-05']);
 });

@@ -2,6 +2,18 @@
 
 Cập nhật ngày 18/10/2026. Đọc file này trước khi tiếp tục công việc trong chat mới, sau đó kiểm tra mã nguồn và `git status` để xác nhận trạng thái thực tế. Đây là bản bàn giao, không phải lệnh tự động triển khai hoặc push.
 
+## Thống kê database và kế hoạch nhân sự — đã được duyệt push
+
+- Người dùng chốt chỉ làm demo, đã xem local và duyệt push phần thống kê/kế hoạch trong commit chứa cập nhật này. Base trước thay đổi: `d8e0664fe001bc293931b5130c4a842ffd38d9ec` trên main (offer/phản hồi). Các phần tiếp theo cần duyệt push riêng; chưa yêu cầu triển khai cloud/email/OTP.
+- Migration 10 `202610180010_recruitment_analytics.sql`: RPC chỉ đọc, kiểm tra HR ở SQL và API `GET /analytics`. Tổng hợp toàn bộ dữ liệu phù hợp, không cắt theo 200 hồ sơ đang tải của portal. Chi tiết tối đa 200 vị trí; dropdown vẫn theo danh sách portal. Offer mới nhất mỗi hồ sơ; superseded riêng, stale pending không tính nguồn vào. Các mốc lấy từ bản ghi thật, không suy ngược stage.
+- `RecruitmentAnalyticsPortal.tsx` đặt trong cổng HR, có lọc vị trí/tháng/ngày tính, lịch nguồn vào 6 tháng, kế hoạch theo một vị trí. Offer được phát hành/thay đổi qua portal làm reload báo cáo, kể cả khi revision hồ sơ không đổi. Abort request khi thay bộ lọc/phiên; không hiện báo cáo cũ trong lúc tải.
+- Accepted/declined đếm riêng. Nguồn vào theo start_date trong tháng và từ ngày tính trở đi; accepted cần app accepted/passed và latest hire cùng decision_id. Đóng vị trí sau khi nhận offer vẫn giữ cam kết nguồn vào. Đã quá ngày bắt đầu hiển thị riêng, không tự coi đã đi làm. Ngày tính là giả định trên dữ liệu mới nhất, không snapshot quá khứ.
+- Kế hoạch HR: nhu cầu/đang thực sự làm/dự kiến kết thúc bắt buộc số nguyên không âm, kết thúc không vượt đang làm; thiếu không coi 0. Giữ lại + accepted sắp bắt đầu; kịch bản thêm pending hợp lệ × 75%. Các giả định chỉ ở phiên xem, reset theo vị trí/tháng/ngày. Ridge chỉ lấy nhu cầu kịch bản giả lập chọn rõ và đúng tháng 10/2026; không tự ánh xạ job hoặc dùng baseline/starts giả lập. Lịch 6 tháng là lịch offer hiện có, không ML nhu cầu 6 tháng.
+- Hai màn hình phân tích demo cũ có nhãn dữ liệu trình duyệt và link sang báo cáo backend. Không đồng bộ/reset localStorage hay `.local`.
+- 124/124 tests đạt, TypeScript/build đạt. Vite vẫn cảnh báo chunk lớn. Test mới bao gồm A/B/HR, RPC anon, lọc/ngày, stale/replaced/accepted/declined/past offers, >200 hồ sơ/vị trí, công thức và thiếu giả định/ML sai tháng. Chưa kiểm tra quyền cloud hoặc tải nhiều kết nối PostgreSQL production.
+- Local đã áp dụng migration không mất dữ liệu: 15 hồ sơ, accepted 1/declined 1/pending 0. Chọn “Vị trí thử offer · Demo”, tháng 11/2026, ngày tính 18/10/2026 → nguồn vào accepted 1, nhu cầu 5/đang làm 0/kết thúc 0 → cần thêm 4. Đây là dữ liệu giả từ bước offer, không tạo hồ sơ mới trong bước thống kê.
+- Xem [hướng dẫn/công thức/giới hạn](ANALYTICS_DEMO.md). Phạm vi demo hiện đã hoàn thành bước thống kê/kế hoạch; tiếp theo chỉ bổ sung tài liệu/kịch bản trình diễn hoặc sửa lỗi thực tế nếu cần, không mặc định triển khai cloud/email thật. Kiểm tra git log/status để xác nhận mốc push thực tế.
+
 ## Offer và phản hồi ứng viên — bản demo (đã được duyệt push)
 
 - Người dùng chỉ làm demo; chưa yêu cầu Supabase cloud, email thật hoặc OTP. Đã xem local và duyệt push phần offer/phản hồi trong commit chứa cập nhật này; các phần sau cần được duyệt push riêng.

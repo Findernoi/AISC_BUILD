@@ -1,6 +1,6 @@
 # TalentForecast AI cho sinh viên UIT
 
-Ứng dụng hỗ trợ tuyển thực tập sinh UIT thuộc KHMT, KTPM và AI. Cổng `/?view=applications` đã dùng API/database từ nộp hồ sơ đến quyết định HR. Luồng demo cũ và hai màn hình dự báo vẫn dùng dữ liệu trình duyệt; chưa nối dự báo vào dữ liệu tuyển dụng backend.
+Ứng dụng hỗ trợ tuyển thực tập sinh UIT thuộc KHMT, KTPM và AI. Cổng `/?view=applications` dùng API/database từ nộp hồ sơ đến quyết định, offer/phản hồi và thống kê HR. Kế hoạch nhân sự lấy nguồn vào từ offer trong database, kết hợp giả định HR; có tùy chọn so sánh nhu cầu Ridge giả lập. Hai màn hình phân tích trong demo cũ vẫn dùng dữ liệu trình duyệt và được ghi nhãn riêng.
 
 ## Chạy bản local hiện tại
 
@@ -36,6 +36,12 @@ Vòng 1 xếp trên toàn bộ hồ sơ trong bộ lọc rồi giới hạn 200 
 
 Sau quyết định chọn tuyển, HR nhập vị trí, ngày bắt đầu dự kiến và nội dung trong **Offer và phản hồi ứng viên**. Ứng viên xem offer riêng và phản hồi trong **Thông báo offer của tôi**. Chấp nhận chuyển hồ sơ sang accepted/passed, từ chối sang withdrawn/rejected; bảng offer giữ trạng thái declined để phân biệt với HR không chọn. Chấp nhận đề nghị chưa phải đã bắt đầu làm việc. Bản thay thế/đã phản hồi/căn cứ lỗi thời không được phản hồi. Xem [kịch bản demo, quy tắc và API](docs/OFFERS_DEMO.md).
 
+## Thống kê và kế hoạch nhân sự
+
+HR mở **Thống kê tuyển dụng · Database**, chọn vị trí, tháng và ngày tính nguồn vào. Tổng tính toàn bộ database trong phạm vi lọc, tách offer chờ hợp lệ/đã nhận/từ chối; chỉ offer mới nhất mỗi hồ sơ được tính. Lịch 6 tháng lấy ngày bắt đầu trên offer, không phải dự báo nhu cầu 6 tháng. Đã nhận offer chưa phải đã đi làm.
+
+Chọn một vị trí để nhập nhu cầu, số đang thực sự làm và số dự kiến kết thúc; bỏ trống không được coi là 0. Nguồn vào gồm offer đã nhận chưa qua ngày bắt đầu và kịch bản thêm offer chờ × 75%. Ridge chỉ so sánh nhu cầu từ kịch bản giả lập đã chọn rõ, đúng tháng 10/2026; không tự ánh xạ vị trí database hay lấy nhân sự giả lập. Xem [công thức, API và kịch bản kiểm tra](docs/ANALYTICS_DEMO.md).
+
 ## Kiểm tra toàn luồng
 
 ```powershell
@@ -50,7 +56,7 @@ npm run build
 
 ## Supabase cloud và production
 
-`npm run dev` dùng Supabase Auth/JWT người gọi, không có đăng nhập mẫu. Chưa áp dụng migrations tuyển dụng lên cloud. Dùng các migration `202610180001` đến `202610180009` theo thứ tự, cấp HR qua kho vai trò riêng, cấu hình private storage và kiểm tra quyền thật trước khi vận hành. Không tạo bảng `profiles/jobs` từ ví dụ rời; dùng [hướng dẫn database](backend/database/README.md) và `.env.example`.
+`npm run dev` dùng Supabase Auth/JWT người gọi, không có đăng nhập mẫu. Chưa áp dụng migrations tuyển dụng lên cloud. Dùng các migration `202610180001` đến `202610180010` theo thứ tự, cấp HR qua kho vai trò riêng, cấu hình private storage và kiểm tra quyền thật trước khi vận hành. Không tạo bảng `profiles/jobs` từ ví dụ rời; dùng [hướng dẫn database](backend/database/README.md) và `.env.example`.
 
 `.env` đặt ở gốc, không in nội dung hoặc commit. Chỉ biến `VITE_` được đưa vào trình duyệt; service-role/Gemini key chỉ phía server. Metadata nghiệp vụ dùng JWT/RLS người gọi; service-role chỉ phục vụ các tác vụ server đã tách riêng như ghi kết quả OCR và lưu byte tệp, không dùng để né quyền HR.
 
@@ -69,7 +75,7 @@ npm start
 
 Placement dùng Logistic Regression từ Campus Recruitment, chỉ GPA và số dự án; không hỏi số lần thực tập. GPA thang 4 nhân 2.5 là giả định, thiếu số dự án dùng median train và cảnh báo. Dataset ngoài UIT, chưa kiểm định tại UIT. Xác suất placement không tham gia điểm vòng 1/top 10/quyết định.
 
-Workforce dùng Ridge trên dữ liệu giả lập. Trong demo có kịch bản SYNTH_CO_01 với 13 tháng lịch sử đến 09/2026, kế hoạch chốt 30/09 để dự báo 10/2026. Chỉ dự báo một tháng, không tự điền dữ liệu thiếu thành 0; chưa kiểm định doanh nghiệp thật. Giả định nhận offer 75% chỉ thuộc mô phỏng, chưa nối trạng thái tuyển dụng backend.
+Workforce dùng Ridge trên dữ liệu giả lập. Trong demo có kịch bản SYNTH_CO_01 với 13 tháng lịch sử đến 09/2026, kế hoạch chốt 30/09 để dự báo 10/2026. Chỉ dự báo một tháng, không tự điền dữ liệu thiếu thành 0; chưa kiểm định doanh nghiệp thật. Màn hình backend mới kết hợp riêng nhu cầu HR/kịch bản Ridge với nguồn vào database; 75% vẫn là giả định cho offer chờ, không phải xác suất ML.
 
 ## Dữ liệu và tái lập ML
 
