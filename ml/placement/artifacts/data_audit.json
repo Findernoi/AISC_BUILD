@@ -1,0 +1,64 @@
+{
+  "policy": "Keep source splits; protect test > validation > train using all original predictor columns. Deduplicate identical predictor+label rows within each retained split. Keep differing labels within the winning source split.",
+  "raw_rows": {
+    "train": 7225,
+    "validation": 1275,
+    "test": 1500
+  },
+  "retained_rows": {
+    "train": 7150,
+    "validation": 1273,
+    "test": 1500
+  },
+  "removed_rows": {
+    "test": {
+      "cross_split": 0,
+      "within_split": 0
+    },
+    "validation": {
+      "cross_split": 2,
+      "within_split": 0
+    },
+    "train": {
+      "cross_split": 34,
+      "within_split": 41
+    }
+  },
+  "raw_duplicate_predictor_and_label_excess_rows": 72,
+  "raw_cross_split_predictor_groups": 33,
+  "raw_predictor_groups_with_differing_labels": 8,
+  "retained_labels": {
+    "train": {
+      "NotPlaced": 4189,
+      "Placed": 2961
+    },
+    "validation": {
+      "Placed": 533,
+      "NotPlaced": 740
+    },
+    "test": {
+      "NotPlaced": 870,
+      "Placed": 630
+    }
+  },
+  "note": "No person ID is available. Identical profiles are not proof of the same person; conservative overlap filtering changes the evaluated population. Matching only the model inputs is not treated as a duplicate.",
+  "source_sha256": {
+    "train.csv": "c9ee94194761275e2c4f5c6296b51490d32a5a4084a857036d2a2bf22b38fbad",
+    "validation.csv": "6c3fd9fa80066a9de3d69215000dce87a9fb2ca3d3452d1a875a613fd2cec62f",
+    "test.csv": "8b9dc66f45bcedb6a48a64bec8fbb04664f2bea8d2e678a8f47cae80e8c59484"
+  },
+  "missing_model_inputs_raw": {
+    "train": {
+      "CGPA": 0,
+      "Projects": 0
+    },
+    "validation": {
+      "CGPA": 0,
+      "Projects": 0
+    },
+    "test": {
+      "CGPA": 0,
+      "Projects": 0
+    }
+  }
+}

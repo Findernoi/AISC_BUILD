@@ -1,0 +1,652 @@
+{
+  "features": [
+    "CGPA",
+    "Projects"
+  ],
+  "seed": 20261018,
+  "selection_metric": "minimum validation Brier score; tie-break log loss then smaller C",
+  "validation_candidates": [
+    {
+      "C": 0.01,
+      "roc_auc": 0.80349120227169,
+      "average_precision": 0.731984991896079,
+      "brier_score": 0.175745450552764,
+      "log_loss": 0.5311369343190208,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 133,
+          "mean_probability": 0.0717587840961178,
+          "observed_placement_rate": 0.10526315789473684
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 283,
+          "mean_probability": 0.16321210030197686,
+          "observed_placement_rate": 0.14487632508833923
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 106,
+          "mean_probability": 0.25926053946427974,
+          "observed_placement_rate": 0.2830188679245283
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 174,
+          "mean_probability": 0.3430250337191785,
+          "observed_placement_rate": 0.3390804597701149
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 58,
+          "mean_probability": 0.44204397926416267,
+          "observed_placement_rate": 0.46551724137931033
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 110,
+          "mean_probability": 0.5453919389931275,
+          "observed_placement_rate": 0.509090909090909
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 118,
+          "mean_probability": 0.6434503894745727,
+          "observed_placement_rate": 0.6186440677966102
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 242,
+          "mean_probability": 0.7452390039528256,
+          "observed_placement_rate": 0.7851239669421488
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 49,
+          "mean_probability": 0.8154256674976943,
+          "observed_placement_rate": 0.8775510204081632
+        }
+      ]
+    },
+    {
+      "C": 0.1,
+      "roc_auc": 0.80349120227169,
+      "average_precision": 0.731984991896079,
+      "brier_score": 0.17562397102041657,
+      "log_loss": 0.5311291798501764,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 143,
+          "mean_probability": 0.06412654327012282,
+          "observed_placement_rate": 0.11888111888111888
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 280,
+          "mean_probability": 0.1541090269519727,
+          "observed_placement_rate": 0.1357142857142857
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 99,
+          "mean_probability": 0.25284164419455885,
+          "observed_placement_rate": 0.30303030303030304
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 174,
+          "mean_probability": 0.33679705650333047,
+          "observed_placement_rate": 0.3390804597701149
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 58,
+          "mean_probability": 0.44221286318259395,
+          "observed_placement_rate": 0.46551724137931033
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 100,
+          "mean_probability": 0.5474990892745563,
+          "observed_placement_rate": 0.5
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 126,
+          "mean_probability": 0.6507296633898088,
+          "observed_placement_rate": 0.6190476190476191
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 244,
+          "mean_probability": 0.7610070063484795,
+          "observed_placement_rate": 0.7827868852459017
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 49,
+          "mean_probability": 0.8323153367569682,
+          "observed_placement_rate": 0.8775510204081632
+        }
+      ]
+    },
+    {
+      "C": 1.0,
+      "roc_auc": 0.80349120227169,
+      "average_precision": 0.731984991896079,
+      "brier_score": 0.17562744596569319,
+      "log_loss": 0.5311859627596325,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 143,
+          "mean_probability": 0.06310309869943244,
+          "observed_placement_rate": 0.11888111888111888
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 280,
+          "mean_probability": 0.15278682927177484,
+          "observed_placement_rate": 0.1357142857142857
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 123,
+          "mean_probability": 0.2610019151907171,
+          "observed_placement_rate": 0.2764227642276423
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 150,
+          "mean_probability": 0.341999662294299,
+          "observed_placement_rate": 0.36666666666666664
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 58,
+          "mean_probability": 0.4422252640109024,
+          "observed_placement_rate": 0.46551724137931033
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 100,
+          "mean_probability": 0.5482242977207366,
+          "observed_placement_rate": 0.5
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 126,
+          "mean_probability": 0.6520580070080266,
+          "observed_placement_rate": 0.6190476190476191
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 207,
+          "mean_probability": 0.7557857791391434,
+          "observed_placement_rate": 0.7729468599033816
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 86,
+          "mean_probability": 0.8201883661588383,
+          "observed_placement_rate": 0.8604651162790697
+        }
+      ]
+    },
+    {
+      "C": 10.0,
+      "roc_auc": 0.80349120227169,
+      "average_precision": 0.731984991896079,
+      "brier_score": 0.17562797504337904,
+      "log_loss": 0.5311923319893793,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 143,
+          "mean_probability": 0.0630004107038214,
+          "observed_placement_rate": 0.11888111888111888
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 280,
+          "mean_probability": 0.15265359862000868,
+          "observed_placement_rate": 0.1357142857142857
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 123,
+          "mean_probability": 0.2608934020006767,
+          "observed_placement_rate": 0.2764227642276423
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 150,
+          "mean_probability": 0.3419330182972171,
+          "observed_placement_rate": 0.36666666666666664
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 58,
+          "mean_probability": 0.4422264308110151,
+          "observed_placement_rate": 0.46551724137931033
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 100,
+          "mean_probability": 0.5482974983169359,
+          "observed_placement_rate": 0.5
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 126,
+          "mean_probability": 0.6521920518783165,
+          "observed_placement_rate": 0.6190476190476191
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 207,
+          "mean_probability": 0.7559608811262881,
+          "observed_placement_rate": 0.7729468599033816
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 86,
+          "mean_probability": 0.8203699354976226,
+          "observed_placement_rate": 0.8604651162790697
+        }
+      ]
+    },
+    {
+      "C": 100.0,
+      "roc_auc": 0.80349120227169,
+      "average_precision": 0.731984991896079,
+      "brier_score": 0.1756280297961229,
+      "log_loss": 0.5311929759579681,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 143,
+          "mean_probability": 0.06299013845134933,
+          "observed_placement_rate": 0.11888111888111888
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 280,
+          "mean_probability": 0.15264026533150593,
+          "observed_placement_rate": 0.1357142857142857
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 123,
+          "mean_probability": 0.2608825391473029,
+          "observed_placement_rate": 0.2764227642276423
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 150,
+          "mean_probability": 0.34192634567313435,
+          "observed_placement_rate": 0.36666666666666664
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 58,
+          "mean_probability": 0.44222654672260153,
+          "observed_placement_rate": 0.46551724137931033
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 100,
+          "mean_probability": 0.5483048252394781,
+          "observed_placement_rate": 0.5
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 126,
+          "mean_probability": 0.6522054685987961,
+          "observed_placement_rate": 0.6190476190476191
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 207,
+          "mean_probability": 0.7559784053732658,
+          "observed_placement_rate": 0.7729468599033816
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 86,
+          "mean_probability": 0.8203881045815025,
+          "observed_placement_rate": 0.8604651162790697
+        }
+      ]
+    }
+  ],
+  "selected_C": 0.1,
+  "train_placement_rate": 0.41412587412587415,
+  "validation": {
+    "logistic_regression": {
+      "roc_auc": 0.80349120227169,
+      "average_precision": 0.731984991896079,
+      "brier_score": 0.17562397102041657,
+      "log_loss": 0.5311291798501764,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 143,
+          "mean_probability": 0.06412654327012282,
+          "observed_placement_rate": 0.11888111888111888
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 280,
+          "mean_probability": 0.1541090269519727,
+          "observed_placement_rate": 0.1357142857142857
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 99,
+          "mean_probability": 0.25284164419455885,
+          "observed_placement_rate": 0.30303030303030304
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 174,
+          "mean_probability": 0.33679705650333047,
+          "observed_placement_rate": 0.3390804597701149
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 58,
+          "mean_probability": 0.44221286318259395,
+          "observed_placement_rate": 0.46551724137931033
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 100,
+          "mean_probability": 0.5474990892745563,
+          "observed_placement_rate": 0.5
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 126,
+          "mean_probability": 0.6507296633898088,
+          "observed_placement_rate": 0.6190476190476191
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 244,
+          "mean_probability": 0.7610070063484795,
+          "observed_placement_rate": 0.7827868852459017
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 49,
+          "mean_probability": 0.8323153367569682,
+          "observed_placement_rate": 0.8775510204081632
+        }
+      ]
+    },
+    "dummy_prior": {
+      "roc_auc": 0.5,
+      "average_precision": 0.4186959937156324,
+      "brier_score": 0.2434105445551762,
+      "log_loss": 0.6799106063251674,
+      "calibration_bins": [
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 1273,
+          "mean_probability": 0.4141258741258741,
+          "observed_placement_rate": 0.4186959937156324
+        }
+      ]
+    }
+  },
+  "test": {
+    "logistic_regression": {
+      "roc_auc": 0.8070333880678711,
+      "average_precision": 0.7267962597549258,
+      "brier_score": 0.17334205967416827,
+      "log_loss": 0.5270586169352225,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 178,
+          "mean_probability": 0.06512412121135097,
+          "observed_placement_rate": 0.12359550561797752
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 305,
+          "mean_probability": 0.15114089226978578,
+          "observed_placement_rate": 0.1377049180327869
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 119,
+          "mean_probability": 0.2542862746402345,
+          "observed_placement_rate": 0.23529411764705882
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 210,
+          "mean_probability": 0.34004593886598644,
+          "observed_placement_rate": 0.3142857142857143
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 65,
+          "mean_probability": 0.4373863395427207,
+          "observed_placement_rate": 0.4
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 113,
+          "mean_probability": 0.5550011307113154,
+          "observed_placement_rate": 0.5575221238938053
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 151,
+          "mean_probability": 0.654388672015867,
+          "observed_placement_rate": 0.6622516556291391
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 282,
+          "mean_probability": 0.7596818719763567,
+          "observed_placement_rate": 0.7695035460992907
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 77,
+          "mean_probability": 0.8280882731570268,
+          "observed_placement_rate": 0.8571428571428571
+        }
+      ]
+    },
+    "dummy_prior": {
+      "roc_auc": 0.5,
+      "average_precision": 0.42,
+      "brier_score": 0.2436345053547851,
+      "log_loss": 0.6803630117361048,
+      "calibration_bins": [
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 1500,
+          "mean_probability": 0.41412587412587404,
+          "observed_placement_rate": 0.42
+        }
+      ]
+    }
+  },
+  "test_rows": 1500,
+  "calibration_method": "10 equal-width probability bins; no post-hoc correction",
+  "export_max_abs_error": 5.551115123125783e-17,
+  "runtime": {
+    "python": "3.14.7",
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1"
+  },
+  "historical_three_feature_reference": {
+    "features": [
+      "CGPA",
+      "Projects",
+      "Internships"
+    ],
+    "test": {
+      "logistic_regression": {
+        "roc_auc": 0.807995803685459,
+        "average_precision": 0.7396108896120422,
+        "brier_score": 0.17332090227813987,
+        "log_loss": 0.5264793900632657,
+        "calibration_bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "count": 177,
+            "mean_probability": 0.06784494567164256,
+            "observed_placement_rate": 0.11864406779661017
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "count": 306,
+            "mean_probability": 0.1502768111576004,
+            "observed_placement_rate": 0.13725490196078433
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "count": 139,
+            "mean_probability": 0.2538315026604757,
+            "observed_placement_rate": 0.2733812949640288
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "count": 179,
+            "mean_probability": 0.3417837131961342,
+            "observed_placement_rate": 0.31843575418994413
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 81,
+            "mean_probability": 0.4369511222243715,
+            "observed_placement_rate": 0.35802469135802467
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "count": 107,
+            "mean_probability": 0.546932016309756,
+            "observed_placement_rate": 0.5607476635514018
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "count": 164,
+            "mean_probability": 0.6544510403733591,
+            "observed_placement_rate": 0.6463414634146342
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "count": 205,
+            "mean_probability": 0.7527745900571988,
+            "observed_placement_rate": 0.7804878048780488
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "count": 142,
+            "mean_probability": 0.8257427435586848,
+            "observed_placement_rate": 0.823943661971831
+          }
+        ]
+      },
+      "dummy_prior": {
+        "roc_auc": 0.5,
+        "average_precision": 0.42,
+        "brier_score": 0.2436345053547851,
+        "log_loss": 0.6803630117361048,
+        "calibration_bins": [
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "count": 1500,
+            "mean_probability": 0.41412587412587404,
+            "observed_placement_rate": 0.42
+          }
+        ]
+      }
+    },
+    "note": "Historical experiment on the same held-out split; comparison is descriptive, not a fresh independent evaluation."
+  }
+}

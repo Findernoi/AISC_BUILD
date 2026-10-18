@@ -1,0 +1,263 @@
+[
+  {
+    "jobId": "job-ai-intern",
+    "snapshot": {
+      "company_id": "SYNTH_CO_01",
+      "department": "AI",
+      "origin_month": "2026-09",
+      "target_month": "2026-10",
+      "snapshot_date": "2026-09-30",
+      "horizon_months": "1",
+      "month_index": "92",
+      "target_month_sin": "-0.8660254",
+      "target_month_cos": "0.5",
+      "required_interns_current": "11",
+      "required_interns_lag_1m": "13",
+      "required_interns_lag_2m": "12",
+      "required_interns_same_month_last_year": "14",
+      "required_interns_mean_3m": "12",
+      "required_interns_mean_6m": "12.5",
+      "interns_current": "12",
+      "permanent_staff_current": "25",
+      "active_projects_current": "4",
+      "overtime_hours_current": "1",
+      "planned_projects_next_month": "4",
+      "planned_workload_hours_next_month": "1496.1",
+      "planned_mentor_capacity_next_month": "17",
+      "planned_stipend_budget_vnd_next_month": "64000000",
+      "planned_intern_exits_next_month": "1",
+      "confirmed_intern_starts_next_month": "0",
+      "working_days_next_month": "22",
+      "data_source": "synthetic",
+      "is_synthetic": "1"
+    },
+    "history": [
+      {
+        "month": "2025-09",
+        "required_interns": 17
+      },
+      {
+        "month": "2025-10",
+        "required_interns": 14
+      },
+      {
+        "month": "2025-11",
+        "required_interns": 15
+      },
+      {
+        "month": "2025-12",
+        "required_interns": 10
+      },
+      {
+        "month": "2026-01",
+        "required_interns": 10
+      },
+      {
+        "month": "2026-02",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-03",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-04",
+        "required_interns": 12
+      },
+      {
+        "month": "2026-05",
+        "required_interns": 13
+      },
+      {
+        "month": "2026-06",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-07",
+        "required_interns": 12
+      },
+      {
+        "month": "2026-08",
+        "required_interns": 13
+      },
+      {
+        "month": "2026-09",
+        "required_interns": 11
+      }
+    ]
+  },
+  {
+    "jobId": "job-backend-intern",
+    "snapshot": {
+      "company_id": "SYNTH_CO_01",
+      "department": "Backend",
+      "origin_month": "2026-09",
+      "target_month": "2026-10",
+      "snapshot_date": "2026-09-30",
+      "horizon_months": "1",
+      "month_index": "92",
+      "target_month_sin": "-0.8660254",
+      "target_month_cos": "0.5",
+      "required_interns_current": "20",
+      "required_interns_lag_1m": "21",
+      "required_interns_lag_2m": "22",
+      "required_interns_same_month_last_year": "16",
+      "required_interns_mean_3m": "21",
+      "required_interns_mean_6m": "19.6667",
+      "interns_current": "19",
+      "permanent_staff_current": "36",
+      "active_projects_current": "6",
+      "overtime_hours_current": "8",
+      "planned_projects_next_month": "6",
+      "planned_workload_hours_next_month": "2074.1",
+      "planned_mentor_capacity_next_month": "23",
+      "planned_stipend_budget_vnd_next_month": "96000000",
+      "planned_intern_exits_next_month": "2",
+      "confirmed_intern_starts_next_month": "3",
+      "working_days_next_month": "22",
+      "data_source": "synthetic",
+      "is_synthetic": "1"
+    },
+    "history": [
+      {
+        "month": "2025-09",
+        "required_interns": 19
+      },
+      {
+        "month": "2025-10",
+        "required_interns": 16
+      },
+      {
+        "month": "2025-11",
+        "required_interns": 18
+      },
+      {
+        "month": "2025-12",
+        "required_interns": 17
+      },
+      {
+        "month": "2026-01",
+        "required_interns": 18
+      },
+      {
+        "month": "2026-02",
+        "required_interns": 18
+      },
+      {
+        "month": "2026-03",
+        "required_interns": 16
+      },
+      {
+        "month": "2026-04",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-05",
+        "required_interns": 20
+      },
+      {
+        "month": "2026-06",
+        "required_interns": 21
+      },
+      {
+        "month": "2026-07",
+        "required_interns": 22
+      },
+      {
+        "month": "2026-08",
+        "required_interns": 21
+      },
+      {
+        "month": "2026-09",
+        "required_interns": 20
+      }
+    ]
+  },
+  {
+    "jobId": "job-fe-intern",
+    "snapshot": {
+      "company_id": "SYNTH_CO_01",
+      "department": "Frontend",
+      "origin_month": "2026-09",
+      "target_month": "2026-10",
+      "snapshot_date": "2026-09-30",
+      "horizon_months": "1",
+      "month_index": "92",
+      "target_month_sin": "-0.8660254",
+      "target_month_cos": "0.5",
+      "required_interns_current": "17",
+      "required_interns_lag_1m": "20",
+      "required_interns_lag_2m": "19",
+      "required_interns_same_month_last_year": "14",
+      "required_interns_mean_3m": "18.6667",
+      "required_interns_mean_6m": "18",
+      "interns_current": "17",
+      "permanent_staff_current": "33",
+      "active_projects_current": "5",
+      "overtime_hours_current": "6",
+      "planned_projects_next_month": "5",
+      "planned_workload_hours_next_month": "1620.7",
+      "planned_mentor_capacity_next_month": "24",
+      "planned_stipend_budget_vnd_next_month": "92000000",
+      "planned_intern_exits_next_month": "4",
+      "confirmed_intern_starts_next_month": "2",
+      "working_days_next_month": "22",
+      "data_source": "synthetic",
+      "is_synthetic": "1"
+    },
+    "history": [
+      {
+        "month": "2025-09",
+        "required_interns": 18
+      },
+      {
+        "month": "2025-10",
+        "required_interns": 14
+      },
+      {
+        "month": "2025-11",
+        "required_interns": 17
+      },
+      {
+        "month": "2025-12",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-01",
+        "required_interns": 13
+      },
+      {
+        "month": "2026-02",
+        "required_interns": 17
+      },
+      {
+        "month": "2026-03",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-04",
+        "required_interns": 14
+      },
+      {
+        "month": "2026-05",
+        "required_interns": 18
+      },
+      {
+        "month": "2026-06",
+        "required_interns": 20
+      },
+      {
+        "month": "2026-07",
+        "required_interns": 19
+      },
+      {
+        "month": "2026-08",
+        "required_interns": 20
+      },
+      {
+        "month": "2026-09",
+        "required_interns": 17
+      }
+    ]
+  }
+]

@@ -55,13 +55,19 @@ Xem [hướng dẫn và các điểm cần làm rõ](docs/frontend-demo.md).
 
 Hồ sơ lưu trong localStorage, CV/minh chứng lưu trong IndexedDB. Kiểm tra email chỉ kiểm tra định dạng miền, chưa xác thực quyền sở hữu hộp thư. Không có bước duyệt ngành/GPA; GPA tự khai vẫn dùng để tính điểm và điểm cộng GPA cao. Minh chứng thành tích/ngoại ngữ mẫu chỉ có giá trị minh họa trong demo.
 
-Đã khôi phục hai màn hình dự báo trong Tổng quan tuyển dụng. Nhu cầu nhân lực ngoại suy tuyến tính từ lịch sử tổng intern cần có theo vị trí; không dùng số tin tuyển dụng thị trường. HR nhập lịch sử 6 tháng, tháng cuối và số intern hiện tại trong Vị trí tuyển dụng. Xác suất tuyển dụng dùng công thức logistic minh họa chỉ với dữ liệu trước vòng 2, không thay điểm vòng 1/top 10 hoặc tự quyết định tuyển. Cả hai đều ghi rõ chưa có mô hình ML được huấn luyện và kiểm định trên dataset thật. Tỷ lệ chuyển đổi là thống kê lịch sử; 75% nhận offer là giả định chung, không phải mô hình ML. Ước tính chỉ gồm offer đang chờ và người đã nhận việc, không áp dụng cho hồ sơ chưa có offer.
+Hai màn hình dự báo đã dùng suy luận TypeScript từ model JSON đã học. Placement chỉ dùng GPA và số dự án, không hỏi số lần thực tập; GPA thang 4 nhân 2,5 là giả định demo. Thiếu số dự án dùng median train và có cảnh báo; giá trị ngoài phạm vi học không bị ép biên. Dataset Campus Recruitment ngoài UIT chưa có đủ thông tin nguồn thu thập và chưa kiểm định khả năng áp dụng tại UIT.
+
+Workforce dùng Ridge trên dữ liệu giả lập. Trong Tổng quan tuyển dụng → Dự báo nhu cầu nhân lực, bấm **Nạp kịch bản SYNTH_CO_01** để gắn snapshot riêng vào ba vị trí mẫu. Dùng 13 tháng lịch sử đến 09/2026 cùng kế hoạch chốt 30/09 để dự báo 10/2026. Có thể chỉnh kế hoạch giả lập và lưu lại trên trình duyệt. Sẵn có tháng tới = max(0, hiện tại − dự kiến kết thúc + đã xác nhận bắt đầu); cần bổ sung = max(0, nhu cầu làm tròn − sẵn có). Chỉ dự báo một tháng, không áp dụng doanh nghiệp mới; vị trí thiếu dữ liệu không tự điền 0. Lịch sử 6 tháng nhập trong Quản lý vị trí vẫn chỉ là thông tin tham chiếu.
+
+Điểm vòng 1/top 10 và quyết định HR không dùng xác suất placement. Tỷ lệ chuyển đổi là thống kê lịch sử; 75% nhận offer là giả định riêng, chỉ áp dụng offer đang chờ và không đếm trùng người đã nhận việc.
 
 Điểm vòng 1 tính theo tiêu chí công khai, khớp kỹ năng theo từ khóa. Chưa có trích xuất CV tự động hoặc đối sánh ngữ nghĩa AI trong luồng mới. Không có màn hình làm bài/chấm code trên app; HR nhập điểm bài test lập trình. Email chỉ mô phỏng, không gửi thư thật. Không dùng chuyên cần hoặc đánh giá đồng nghiệp.
 
 ## Kiểm tra
 
-Bộ dữ liệu ML dự báo nhu cầu intern theo tháng/phòng ban nằm trong [data/workforce_synthetic](data/workforce_synthetic/README.md): 2.790 dòng lịch sử giả lập, 2.400 mẫu học, mẫu nhập dữ liệu thật và từ điển cột. Mã mô phỏng, huấn luyện Ridge và báo cáo đánh giá nằm ở `ml/workforce/`. Đây là thử nghiệm offline trên dữ liệu giả lập, chưa nối mô hình mới vào web và chưa kiểm định trên doanh nghiệp thật.
+Bộ dữ liệu ML dự báo nhu cầu intern theo tháng/phòng ban nằm trong [data/workforce_synthetic](data/workforce_synthetic/README.md): 2.790 dòng lịch sử giả lập, 2.400 mẫu học, mẫu nhập dữ liệu thật và từ điển cột. Mã mô phỏng, huấn luyện Ridge và báo cáo đánh giá nằm ở `ml/workforce/`. Model đã được export sang frontend cho kịch bản giả lập; chưa kiểm định trên doanh nghiệp thật.
+
+Mô hình placement dùng [Campus Recruitment CSV](data/campus_recruitment/README.md), thay bộ Student Placement Outcomes của cuộc thi Kaggle. Nguồn công bố CC0; ba CSV gốc có tổng 10.000 dòng. Pipeline [ml/placement](ml/placement/README.md) kiểm tra checksum, lọc giao nhau giữa các tập, train Logistic Regression với GPA và số dự án, so sánh baseline và bản ba đầu vào trước đây. [Báo cáo đánh giá](ml/placement/artifacts/EVALUATION.md) lưu kết quả của lần chạy; model và preprocessing được xuất JSON. Model hai đầu vào đã nối frontend, chưa kiểm định tại UIT; cột `Internships` vẫn giữ trong CSV gốc nhưng không đưa vào X hoặc form.
 
 ```sh
 npm run lint
@@ -70,6 +76,21 @@ npm run build
 ```
 
 Kiểm thử bao gồm miền email chính xác, GPA tự khai, top 10, minh chứng thành tích, điều kiện đủ điểm vòng 2, tỷ trọng 100%, thống kê lịch sử, giả định offer 75%, mốc dự báo và dữ liệu thiếu, GPA tương đương và chống rò rỉ điểm vòng 2 vào xác suất vòng hồ sơ.
+
+## Tái lập ML và export frontend
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r ml/placement/requirements.txt
+.\.venv\Scripts\python.exe -m unittest discover -s ml/placement -p "test_*.py" -v
+.\.venv\Scripts\python.exe ml/placement/train.py
+.\.venv\Scripts\python.exe ml/export_frontend.py
+npm test
+```
+
+`ml/export_frontend.py` đồng bộ model và các mẫu đối chiếu với `frontend/src/data/models/`. `npm test` kiểm tra 15 mẫu placement và 30 mẫu workforce giữa Python/TypeScript, sai số dưới 0,000001. Bộ CSV mới được commit cùng nguồn/giấy phép CC0 và checksum; `.gitattributes` giữ nguyên byte CSV khi clone Windows/Linux.
+
+Backend nghiệp vụ đầy đủ (database tuyển dụng, phân quyền HR/ứng viên, CV trên server và email thật) là giai đoạn kế tiếp; bản hiện tại vẫn lưu hồ sơ trong trình duyệt. Không cần cấu hình Supabase để chạy demo hoặc hai model.
 
 ## Optional Supabase integration
 

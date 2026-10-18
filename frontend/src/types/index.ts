@@ -30,6 +30,7 @@ export interface JobPosting {
   hiringPeriod?: string;
   demandHistory?: number[];
   demandHistoryEndMonth?: string;
+  workforceSnapshot?: Record<string, string | number>;
 }
 
 export interface AIScreeningReport {

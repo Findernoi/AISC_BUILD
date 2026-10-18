@@ -1,0 +1,96 @@
+{
+  "features": [
+    "CGPA",
+    "Projects",
+    "Internships"
+  ],
+  "test": {
+    "logistic_regression": {
+      "roc_auc": 0.807995803685459,
+      "average_precision": 0.7396108896120422,
+      "brier_score": 0.17332090227813987,
+      "log_loss": 0.5264793900632657,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 177,
+          "mean_probability": 0.06784494567164256,
+          "observed_placement_rate": 0.11864406779661017
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 306,
+          "mean_probability": 0.1502768111576004,
+          "observed_placement_rate": 0.13725490196078433
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 139,
+          "mean_probability": 0.2538315026604757,
+          "observed_placement_rate": 0.2733812949640288
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 179,
+          "mean_probability": 0.3417837131961342,
+          "observed_placement_rate": 0.31843575418994413
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 81,
+          "mean_probability": 0.4369511222243715,
+          "observed_placement_rate": 0.35802469135802467
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 107,
+          "mean_probability": 0.546932016309756,
+          "observed_placement_rate": 0.5607476635514018
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 164,
+          "mean_probability": 0.6544510403733591,
+          "observed_placement_rate": 0.6463414634146342
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 205,
+          "mean_probability": 0.7527745900571988,
+          "observed_placement_rate": 0.7804878048780488
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 142,
+          "mean_probability": 0.8257427435586848,
+          "observed_placement_rate": 0.823943661971831
+        }
+      ]
+    },
+    "dummy_prior": {
+      "roc_auc": 0.5,
+      "average_precision": 0.42,
+      "brier_score": 0.2436345053547851,
+      "log_loss": 0.6803630117361048,
+      "calibration_bins": [
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 1500,
+          "mean_probability": 0.41412587412587404,
+          "observed_placement_rate": 0.42
+        }
+      ]
+    }
+  },
+  "note": "Historical experiment on the same held-out split; comparison is descriptive, not a fresh independent evaluation."
+}

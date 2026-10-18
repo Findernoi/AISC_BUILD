@@ -1,0 +1,2 @@
+# Keep downloaded CSV bytes intact so SHA-256 checks survive cross-platform clones.
+/data/campus_recruitment/*.csv -text

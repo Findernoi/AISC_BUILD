@@ -1,0 +1,113 @@
+{
+  "feature_order": [
+    "CGPA",
+    "Projects"
+  ],
+  "cases": [
+    {
+      "inputs": [
+        7.7,
+        1.0
+      ],
+      "expected_probability": 0.1853697092000106
+    },
+    {
+      "inputs": [
+        7.6,
+        3.0
+      ],
+      "expected_probability": 0.5886216639340155
+    },
+    {
+      "inputs": [
+        7.0,
+        1.0
+      ],
+      "expected_probability": 0.09282278791495308
+    },
+    {
+      "inputs": [
+        7.9,
+        3.0
+      ],
+      "expected_probability": 0.6683677417642091
+    },
+    {
+      "inputs": [
+        6.7,
+        2.0
+      ],
+      "expected_probability": 0.1616813737127684
+    },
+    {
+      "inputs": [
+        8.2,
+        3.0
+      ],
+      "expected_probability": 0.7394965178303702
+    },
+    {
+      "inputs": [
+        8.4,
+        3.0
+      ],
+      "expected_probability": 0.7810360754361662
+    },
+    {
+      "inputs": [
+        7.4,
+        1.0
+      ],
+      "expected_probability": 0.1390834301300537
+    },
+    {
+      "inputs": [
+        7.2,
+        2.0
+      ],
+      "expected_probability": 0.25447839693974583
+    },
+    {
+      "inputs": [
+        7.4,
+        1.0
+      ],
+      "expected_probability": 0.1390834301300537
+    },
+    {
+      "inputs": [
+        7.3,
+        3.0
+      ],
+      "expected_probability": 0.50393212239257
+    },
+    {
+      "inputs": [
+        8.2,
+        1.0
+      ],
+      "expected_probability": 0.28710633834883115
+    },
+    {
+      "inputs": [
+        null,
+        0
+      ],
+      "expected_probability": 0.07894280048680591
+    },
+    {
+      "inputs": [
+        6.5,
+        null
+      ],
+      "expected_probability": 0.13306437525092388
+    },
+    {
+      "inputs": [
+        null,
+        null
+      ],
+      "expected_probability": 0.376609180759066
+    }
+  ]
+}

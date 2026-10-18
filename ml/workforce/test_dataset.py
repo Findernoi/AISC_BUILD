@@ -1,12 +1,11 @@
 """Integrity checks for temporal alignment and synthetic headcount accounting."""
 import copy
 import csv
-import json
 import unittest
 
 import numpy as np
 
-from generate import CATEGORICAL, NUMERIC, OUTPUT, STAGING, TARGET, build_features, generate_history, month_add, validate_history
+from generate import CATEGORICAL, HISTORY_SCHEMA, NUMERIC, OUTPUT, TARGET, build_features, generate_history, month_add, validate_history
 from train_baseline import encode, fit_encoder, metrics, validate_samples
 
 
@@ -85,7 +84,13 @@ class DatasetTests(unittest.TestCase):
         self.assertEqual(metrics(np.array([0, 2]), np.array([1, 3])), {"MAE_interns": 1.0, "RMSE_interns": 1.0})
 
     def test_exported_csv_preserves_every_value(self):
-        tables = json.loads((STAGING / "tables.json").read_text(encoding="utf-8"))
+        # Derive expectations in memory so tests also work in a fresh clone without tmp/.
+        tables = {
+            "monthly_history.csv": {"columns": list(HISTORY_SCHEMA), "rows": self.history},
+            "training_next_month.csv": {"columns": list(self.samples[0]), "rows": self.samples},
+            "forecast_inputs_2026_10.csv": {"columns": list(self.latest[0]), "rows": self.latest},
+            "real_data_template.csv": {"columns": list(HISTORY_SCHEMA), "rows": []},
+        }
         for filename, table in tables.items():
             with (OUTPUT / filename).open(encoding="utf-8-sig", newline="") as file:
                 reader = csv.DictReader(file)
