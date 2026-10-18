@@ -4,7 +4,7 @@ import { recruitmentFetch } from '../lib/recruitmentApi';
 import { INTERVIEW_CRITERIA } from '../lib/recruitment';
 import { Panel,Field } from './analytics/Shared';
 
-export function RoundTwoPortal({applications,invitations,hr}:{applications:RecruitmentApplication[];invitations:InterviewInvitation[];hr:boolean}) {
+export function RoundTwoPortal({applications,invitations,hr,onChanged}:{applications:RecruitmentApplication[];invitations:InterviewInvitation[];hr:boolean;onChanged:()=>Promise<void>}) {
   const [selected,setSelected]=useState('');
   const invited=applications.filter(a=>invitations.some(i=>i.application_id===a.id));
   const current=invited.find(a=>a.id===selected)??invited[0];
@@ -12,14 +12,14 @@ export function RoundTwoPortal({applications,invitations,hr}:{applications:Recru
     <p className="mb-4 text-sm text-slate-400">{hr?'Lưu lịch, điểm bài test và phiếu phỏng vấn vào database. Điểm và ghi chú đánh giá chỉ HR được xem.':'Xem lịch và hướng dẫn phỏng vấn dành cho hồ sơ của bạn.'} Chưa gửi email hoặc tạo sự kiện lịch tự động.</p>
     {!current?<p className="text-sm text-slate-400">Chưa có hồ sơ được mời vào vòng 2.</p>:<>
       <Field label="Hồ sơ đã được mời"><select value={current.id} onChange={e=>setSelected(e.target.value)}>{invited.map(a=><option key={a.id} value={a.id}>{a.full_name} · {a.major} · {a.id.slice(0,8)}</option>)}</select></Field>
-      <RoundTwoDetail key={current.id} application={current} hr={hr} />
+      <RoundTwoDetail key={current.id} application={current} hr={hr} onChanged={onChanged} />
     </>}
   </Panel>;
 }
 function localTime(value:string) {
   const d=new Date(value);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
 }
-function RoundTwoDetail({application,hr}:{application:RecruitmentApplication;hr:boolean}) {
+function RoundTwoDetail({application,hr,onChanged}:{application:RecruitmentApplication;hr:boolean;onChanged:()=>Promise<void>}) {
   const [report,setReport]=useState<RoundTwoReport|null>(null),[version,setVersion]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const path=`applications/${application.id}/round-two`;
   useEffect(()=>{
@@ -29,7 +29,7 @@ function RoundTwoDetail({application,hr}:{application:RecruitmentApplication;hr:
   },[path,version]);
   const save=async(input:RoundTwoMutation)=>{
     setBusy(true);setError('');setNotice('');
-    try{await recruitmentFetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});setNotice('Đã lưu vào database.');setVersion(v=>v+1);}
+    try{await recruitmentFetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});setNotice('Đã lưu vào database.');setVersion(v=>v+1);await onChanged();}
     catch(e){setError(e instanceof Error?e.message:'Không lưu được dữ liệu.');}finally{setBusy(false);}
   };
   const editable=hr&&application.stage==='interview'&&application.status==='passed';

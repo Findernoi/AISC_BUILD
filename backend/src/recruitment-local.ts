@@ -7,11 +7,12 @@ import { APPLICATION_COLUMNS, JOB_COLUMNS, type RecruitmentStore } from './recru
 import type { RecruitmentApplication, RecruitmentJob, RecruitmentFile, EvidenceCheck } from '../../shared/recruitment';
 import type { RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
 import type { RoundTwoReport } from '../../shared/recruitment';
+import type { HiringReport,HiringDecision } from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
   const exists=await db.query<{relation:string|null}>(`select to_regclass('public.applications')::text as relation`);
-  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);return;}
+  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);return;}
   // Local-only bootstrap. Never run this harness against Supabase.
   const source=(await readFile(migrationUrl,'utf8'))+'\n'+(await readFile(roleMigrationUrl,'utf8'));
   await db.transaction(async tx=>{
@@ -32,6 +33,11 @@ export async function initializeLocalRecruitment(db: PGlite) {
   await ensureEvidenceMigration(db);
   await ensureRoundOneMigration(db);
   await ensureRoundTwoMigration(db);
+  await ensureHiringMigration(db);
+}
+async function ensureHiringMigration(db:PGlite) {
+  const found=await db.query<{fn:string|null}>("select to_regprocedure('public.save_hiring_decision(uuid,text,jsonb,text,text)')::text as fn");
+  if(!found.rows[0].fn)await db.exec(await readFile(new URL('../database/migrations/202610180007_hiring_decisions.sql',import.meta.url),'utf8'));
 }
 async function ensureRoundTwoMigration(db:PGlite) {
   const found=await db.query<{fn:string|null}>("select to_regprocedure('public.save_round_two(uuid,bigint,text,jsonb)')::text as fn");
@@ -65,6 +71,8 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    hiringReport:(id,weights)=>withIdentity(db,identity,async tx=>(await tx.query<{report:HiringReport|null}>('select public.hiring_report($1::uuid,$2::jsonb) as report',[id,JSON.stringify(weights)])).rows[0].report),
+    decide:(id,input)=>withIdentity(db,identity,async tx=>(await tx.query<{decision:HiringDecision}>('select public.save_hiring_decision($1::uuid,$2,$3::jsonb,$4,$5) as decision',[id,input.expectedBasis,JSON.stringify(input.weights),input.result,input.reason])).rows[0].decision),
     roundTwo:id=>withIdentity(db,identity,async tx=>(await tx.query<{report:RoundTwoReport|null}>('select public.read_round_two($1::uuid) as report',[id])).rows[0].report),
     saveRoundTwo:(id,input)=>withIdentity(db,identity,async tx=>{await tx.query('select public.save_round_two($1::uuid,$2::bigint,$3,$4::jsonb)',[id,input.expectedRevision,input.kind,JSON.stringify(input.data)]);}),
     roundOne:scope=>withIdentity(db,identity,async tx=>(await tx.query<{report:RoundOneReport}>('select public.round_one_report($1::uuid,$2) as report',[scope.jobId,scope.major])).rows[0].report),

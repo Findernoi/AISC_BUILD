@@ -3,7 +3,7 @@ import type { RecruitmentJob,RoundOneReport } from '../../../shared/recruitment'
 import { recruitmentFetch } from '../lib/recruitmentApi';
 import { Field,Panel } from './analytics/Shared';
 
-export function RoundOnePortal({jobs,local,onChanged}:{jobs:RecruitmentJob[];local:boolean;onChanged:()=>Promise<void>}) {
+export function RoundOnePortal({jobs,local,onChanged,refreshKey=''}:{jobs:RecruitmentJob[];local:boolean;onChanged:()=>Promise<void>;refreshKey?:string}) {
   const [jobId,setJobId]=useState('all'),[major,setMajor]=useState('all');
   const [report,setReport]=useState<RoundOneReport|null>(null);
   const [selected,setSelected]=useState<string[]>([]);
@@ -14,7 +14,7 @@ export function RoundOnePortal({jobs,local,onChanged}:{jobs:RecruitmentJob[];loc
     void recruitmentFetch(`round-one?${new URLSearchParams({jobId,major})}`,{signal:controller.signal}).then(r=>r.json())
       .then(data=>{if(!controller.signal.aborted)setReport(data.report);}).catch(e=>{if(!controller.signal.aborted)setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return()=>controller.abort();
-  },[jobId,major,version]);
+  },[jobId,major,version,refreshKey]);
   const invite=async()=>{
     setBusy(true);setError('');setNotice('');
     try{

@@ -4,9 +4,12 @@ import { ApiError } from './recruitment-validation';
 import type { EvidenceCheck, CheckRegistration } from '../../shared/recruitment';
 import type { RoundOneScope,RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
 import type { RoundTwoReport,RoundTwoMutation } from '../../shared/recruitment';
+import type { HiringReport,HiringWeights,HiringDecisionInput,HiringDecision } from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  hiringReport(id:string,weights:HiringWeights):Promise<HiringReport|null>;
+  decide(id:string,input:HiringDecisionInput):Promise<HiringDecision>;
   roundTwo(id:string):Promise<RoundTwoReport|null>;
   saveRoundTwo(id:string,input:RoundTwoMutation):Promise<void>;
   roundOne(scope:RoundOneScope):Promise<RoundOneReport>;
@@ -45,6 +48,8 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async hiringReport(id,weights){const r=await client.rpc('hiring_report',{target:id,weights});if(r.error)throw r.error;return r.data as HiringReport|null;},
+    async decide(id,input){const r=await client.rpc('save_hiring_decision',{target:id,expected_basis:input.expectedBasis,weights:input.weights,outcome:input.result,explanation:input.reason});if(r.error)throw r.error;return r.data as HiringDecision;},
     async roundTwo(id){const r=await client.rpc('read_round_two',{target:id});if(r.error)throw r.error;return r.data as RoundTwoReport|null;},
     async saveRoundTwo(id,input){const r=await client.rpc('save_round_two',{target:id,expected_revision:input.expectedRevision,kind:input.kind,payload:input.data});if(r.error)throw r.error;},
     async roundOne(scope){const r=await client.rpc('round_one_report',{job_filter:scope.jobId,major_filter:scope.major});if(r.error)throw r.error;return r.data as RoundOneReport;},

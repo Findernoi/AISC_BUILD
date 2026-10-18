@@ -51,3 +51,14 @@ export interface RoundTwoReport {
   coding:(CodingEvaluationInput & {reviewed_by:string;reviewed_at:string})|null;
   interview:(Record<InterviewCriterion,number|string> & {evidence:Record<InterviewCriterion,string>;overall_score:number|string;reviewed_by:string;reviewed_at:string})|null;
 }
+export interface HiringWeights {roundOne:number;coding:number;interview:number;}
+export interface HiringDecisionInput {expectedBasis:string;weights:HiringWeights;result:'hire'|'reserve'|'reject';reason:string;}
+export interface HiringDecision {
+  id:string;application_id:string;application_revision:number;result:HiringDecisionInput['result'];reason:string;decided_by:string;decided_at:string;
+  round_one_score:number|string;coding_score:number|string;interview_score:number|string;final_score:number|string;
+  round_one_weight:number|string;coding_weight:number|string;interview_weight:number|string;source_basis:string|null;
+}
+export interface HiringReport {
+  revision:number;basis:string;weights:HiringWeights;roundOne:number;coding:number|null;interview:number|null;finalScore:number|null;reasons:string[];
+  history:HiringDecision[];
+}

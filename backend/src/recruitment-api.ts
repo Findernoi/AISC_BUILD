@@ -8,6 +8,7 @@ import { cloudFileStorage, diskFileStorage, isUuid, MAX_FILE_BYTES, readEvidence
 import { validateDeclaration, checkEvidence, claimsHash, type extractEvidence } from './evidence-analysis';
 import type { RoundOneScope } from '../../shared/recruitment';
 import { validateRoundTwo } from './round-two-validation';
+import {validateHiringDecision,validateHiringWeights} from './hiring-validation';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
@@ -77,6 +78,24 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
   router.get('/invitations',handle(async(req,res)=>{
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
     res.json({invitations:await db.invitations()});
+  }));
+  router.get('/applications/:id/hiring',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được xem bảng tổng hợp và quyết định.');
+    if(Object.keys(req.query).some(k=>!['roundOne','coding','interview'].includes(k)))throw new ApiError(400,'Bộ lọc tỷ trọng không hợp lệ.');
+    const values=['roundOne','coding','interview'].map(k=>req.query[k]);
+    if(values.some(v=>v!==undefined&&(typeof v!=='string'||!/^\d{1,3}$/.test(v))))throw new ApiError(400,'Tỷ trọng không hợp lệ.');
+    const weights=validateHiringWeights({roundOne:Number(req.query.roundOne??30),coding:Number(req.query.coding??30),interview:Number(req.query.interview??40)});
+    const report=await db.hiringReport(req.params.id,weights);if(!report)throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    res.json({report});
+  }));
+  router.post('/applications/:id/hiring',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được lưu quyết định.');
+    if(!await db.application(req.params.id))throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    res.status(201).json({decision:await db.decide(req.params.id,validateHiringDecision(req.body))});
   }));
   router.get('/applications/:id/round-two',handle(async(req,res)=>{
     if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');

@@ -2,13 +2,24 @@
 
 Cập nhật ngày 18/10/2026. Đọc file này trước khi tiếp tục công việc trong chat mới, sau đó kiểm tra mã nguồn và `git status` để xác nhận trạng thái thực tế. Đây là bản bàn giao, không phải lệnh tự động triển khai hoặc push.
 
-## Bổ sung mới nhất: vòng 2 (chưa commit/push)
+## Bổ sung mới nhất: tổng hợp và quyết định (đã được duyệt push)
+
+- Mốc vòng 2 là `1fe031603ea8e1ea011fe2c8839b05c3eaa3cea8` trên `main`. Người dùng đã xem local và đồng ý push phần tổng hợp/quyết định trong commit chứa cập nhật này; dùng `git log` và `git status` để xác nhận trạng thái thực tế. Quyền push này chỉ áp dụng phần đã duyệt.
+- Migration 7 `202610180007_hiring_decisions.sql`: API/RPC tổng hợp và lưu quyết định. HR chọn tỷ trọng số nguyên 0–100 tổng 100, mặc định vòng 1/bài test/phỏng vấn 30/30/40. Database tính đến hai chữ số thập phân (demo cũ làm tròn một chữ số); không dùng xác suất ML.
+- Điểm vòng 1 được tính lại từ thông tin/minh chứng hiện tại, không dùng điểm snapshot lời mời để quyết định. Cần đã mời vòng 2, đủ bài test và phiếu 5 tiêu chí, email/ngành/GPA hợp lệ, vị trí đang mở, stage interview/offer. Không có ngưỡng tổng hợp tự động chọn tuyển.
+- Hash căn cứ gồm hồ sơ/revision, vị trí, lời mời, điểm và đánh giá hiện tại. Thay đổi căn cứ trả 409 khi ghi; update trạng thái và insert quyết định cùng transaction. Chặn raw insert quyết định qua authenticated. Lịch sử lưu điểm, tỷ trọng, lý do, người duyệt và hash; không sửa bản cũ.
+- Chọn tuyển → offer/passed (chưa accepted), dự phòng → interview/hold, không chọn → interview/rejected. Có thể lưu quyết định mới theo dữ liệu hiện tại; không tự gửi email, tạo offer letter hay thay đổi cloud. Điểm/lý do/lịch sử chỉ HR đọc; ứng viên vẫn đọc trạng thái hồ sơ của mình.
+- UI `HiringDecisionPortal.tsx`; đổi tỷ trọng cần duyệt quyết định mới. Bảng chỉ tổng hợp các hồ sơ có lời mời trong tập dữ liệu portal đang tải (tối đa 200); không tuyên bố là xếp hạng toàn bộ database. Vòng 1 được tải lại khi revision hồ sơ thay đổi.
+- Kiểm thử hiện tại: 98/98 đạt, TypeScript/build đạt; cảnh báo chunk Vite vẫn còn. Đã thử UI trên hồ sơ giả lập 11: vòng 1 78, bài test 82, phỏng vấn 79 → 79,60 với 30/30/40, lưu chọn tuyển/chờ offer thành công.
+- Bước tiếp theo đề xuất: hoàn thiện quy trình HR xác minh minh chứng trong portal, rà soát toàn luồng và tài liệu. Nhắc người dùng trước khi bắt đầu phạm vi mới. Chỉ push khi người dùng duyệt.
+
+## Mốc vòng 2 (đã push ở 1fe0316)
 
 - Đã nối lịch, điểm bài test và phiếu phỏng vấn 5 tiêu chí vào portal/API/database, dùng bảng điểm có sẵn. File UI mới `frontend/src/components/RoundTwoPortal.tsx`, validator `backend/src/round-two-validation.ts`.
 - Migration 6: `202610180006_round_two.sql`, thêm lịch, read/save RPC, kiểm tra stage/quyền/revision và chặn ghi thẳng bảng điểm qua authenticated. Local tự áp dụng; chưa áp dụng cloud. Điểm do database tính, actor lấy từ phiên HR.
 - Ứng viên chỉ xem lịch của mình; điểm/ghi chú/bằng chứng phỏng vấn chỉ HR xem theo quyền đã có. Không gửi email hoặc tạo sự kiện lịch tự động.
 - Kiểm thử: 91/91 đạt, TypeScript/build đạt; Vite vẫn cảnh báo bundle lớn. Đã thử UI HR trên hồ sơ giả lập 11: lịch 09:00 ngày 20/10/2026 giờ Việt Nam, bài test 82, phỏng vấn 79/100. Đây là dữ liệu thử local.
-- Phần trạng thái Git bên dưới mô tả mốc trước khi làm vòng 2. Hiện còn thay đổi chưa commit; kiểm tra `git status`. Chỉ push sau khi người dùng duyệt.
+- Phần trạng thái Git bên dưới mô tả mốc trước khi làm vòng 2. Vòng 2 đã push; phần tổng hợp/quyết định phía trên đã được người dùng duyệt push. Kiểm tra `git log` và `git status`.
 - Bước tiếp theo: nối tổng hợp điểm và quyết định/offer vào backend, sau khi giải thích phạm vi cho người dùng. Hạng mục 1 trong danh sách đề xuất cuối file đã hoàn thành cho phạm vi nêu trên.
 
 ## Trạng thái Git
