@@ -2,7 +2,17 @@
 
 Cập nhật ngày 18/10/2026. Đọc file này trước khi tiếp tục công việc trong chat mới, sau đó kiểm tra mã nguồn và `git status` để xác nhận trạng thái thực tế. Đây là bản bàn giao, không phải lệnh tự động triển khai hoặc push.
 
-## Rà soát toàn luồng A/B/HR (đã được duyệt push)
+## Offer và phản hồi ứng viên — bản demo (đã được duyệt push)
+
+- Người dùng chỉ làm demo; chưa yêu cầu Supabase cloud, email thật hoặc OTP. Đã xem local và duyệt push phần offer/phản hồi trong commit chứa cập nhật này; các phần sau cần được duyệt push riêng.
+- Migration 9 `202610180009_offers.sql`: bảng offer riêng, RLS chủ hồ sơ/HR, RPC đọc/phát hành/phản hồi. Local tự áp dụng, không sửa cloud. UI `OfferPortal.tsx` được nối vào cổng ứng tuyển.
+- HR cần quyết định hire mới nhất còn khớp căn cứ hiện tại, hồ sơ offer/passed, vị trí đang mở. Nhập vị trí trong offer, ngày bắt đầu dự kiến và nội dung. Bản mới thay thế bản pending cũ nhưng giữ lịch sử; expectedOfferId ngăn hai HR vô tình ghi đè. Quyết định HR mới làm offer pending cũ superseded.
+- Ứng viên chỉ xem offer của mình và phản hồi một lần với revision hiện tại. accepted → applications.accepted/passed, declined → applications.withdrawn/rejected. Phân biệt từ chối offer ở bảng offer, không đổi lịch sử HR thành reject. Chấp nhận đề nghị chưa xác nhận đã bắt đầu làm việc. UI không gọi trạng thái rút hồ sơ là “Không đạt”.
+- Offer thay thế, đã phản hồi hoặc căn cứ thay đổi không được phản hồi; stale trả 409. HR không phản hồi thay ứng viên; B đọc/phản hồi offer A bị chặn. Không gửi email hoặc tạo PDF offer letter.
+- Kiểm thử phần offer và toàn bộ: 115 tests đạt, TypeScript/build đạt. Đã thử UI HR phát hành trên vị trí giả `Vị trí thử offer · Demo`, A chấp nhận, B từ chối. Có thêm hai hồ sơ giả local, giữ nguyên dữ liệu cũ. Xem `docs/OFFERS_DEMO.md` để trình diễn lại.
+- Mốc đã push gần nhất: `359f0fe6d95ddd0eb437f023e0af258913d542d1`. Bước tiếp theo đề xuất sau khi duyệt phần này: nối dự báo/thống kê vào dữ liệu backend, phân biệt pending/accepted/declined và ngày bắt đầu dự kiến. Chưa tự triển khai bước đó.
+
+## Rà soát toàn luồng A/B/HR (đã push ở 359f0fe)
 
 - Đã hoàn tất bước 1 người dùng duyệt: kiểm tra luồng API/database và sửa lỗi form điểm ngoại ngữ, ngày lịch không tồn tại, chặn phản hồi tải cũ sau đổi phiên và tải lại vòng 2 theo revision.
 - Báo cáo ở `docs/WORKFLOW_REVIEW.md`; test mới `backend/tests/recruitment-flow.test.ts` đi từ nộp hồ sơ/tệp/PDF thật/ngoại lệ/vòng 1/phỏng vấn đến quyết định, quyền A/B/HR, cookie đăng xuất và stale basis.

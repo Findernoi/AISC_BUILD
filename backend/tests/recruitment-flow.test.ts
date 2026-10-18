@@ -75,6 +75,14 @@ test('A/B/HR full API flow: private files, actual PDF reading, exceptions, invit
     assert.equal((await call(hiring,'hr',{...decisionInput,expectedBasis:beforeReread.basis})).status,409);
     const afterReread=(await ok(hiring,'hr')).report;assert.notEqual(afterReread.basis,decision.source_basis);assert.equal(afterReread.history.length,1);assert.deepEqual(afterReread.history[0],decision);
     report=(await ok(`/round-one?jobId=${job.id}`,'hr')).report;assert.equal(report.rows.find((r:any)=>r.application.id===a.id).inTopTen,false);
+    // HR re-approves the changed basis before issuing terms; candidate acceptance completes the flow.
+    const freshDecision=(await ok(hiring,'hr',{...decisionInput,expectedBasis:afterReread.basis})).decision;
+    const currentBasis=(await ok(hiring,'hr')).report.basis;
+    const offerId=(await ok(`/applications/${a.id}/offers`,'hr',{expectedOfferId:null,expectedDecisionId:freshDecision.id,expectedBasis:currentBasis,positionTitle:'Thực tập sinh kiểm thử',startDate:'2026-11-02',content:'Offer thử trong ứng dụng, không gửi email'})).id;
+    assert.equal((await ok('/offers','candidate_a')).offers[0].actionable,true);assert.equal((await ok('/offers','candidate_b')).offers.length,0);
+    assert.equal((await call(`/offers/${offerId}/respond`,'candidate_b',{expectedRevision:1,outcome:'accepted',note:''})).status,404);
+    await ok(`/offers/${offerId}/respond`,'candidate_a',{expectedRevision:1,outcome:'accepted',note:'Đồng ý offer thử'});
+    assert.equal((await ok('/applications','candidate_a')).applications[0].stage,'accepted');assert.equal((await ok('/offers','hr')).offers[0].status,'accepted');
     await ok('/logout','candidate_a',{});assert.equal((await call('/applications','candidate_a')).status,401);assert.equal((await ok('/applications','candidate_b')).applications[0].id,b.id);
   }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));await db.close();}
 });

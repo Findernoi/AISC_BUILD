@@ -1,5 +1,11 @@
 # Database tuyển dụng giai đoạn 1
 
+## Offer trong ứng dụng (migration 9)
+
+`202610180009_offers.sql` bổ sung `recruitment_offers`, RLS đọc theo chủ hồ sơ/HR và các RPC `read_offers`, `issue_offer`, `respond_offer`. Chạy sau migration 1–8; local tự áp dụng, chưa áp dụng cloud. Thông báo trong ứng dụng, không gửi email thật. Xem [kịch bản demo, hợp đồng API, trạng thái và giới hạn](../../docs/OFFERS_DEMO.md).
+
+HR chỉ phát hành từ quyết định hire mới nhất còn khớp căn cứ hiện tại; expectedDecisionId/expectedBasis/expectedOfferId chặn dữ liệu cũ và ghi đè offer pending ngoài ý muốn. Phát hành lại giữ bản cũ superseded; decision mới cũng supersede pending. Ứng viên chỉ phản hồi offer của mình một lần với revision hiện tại, pending còn hiệu lực, app offer/passed và vị trí đang mở. accepted chuyển app accepted/passed; declined chuyển withdrawn/rejected nhưng vẫn lưu riêng ở offer. Đây là đồng ý nhận đề nghị, chưa xác nhận đã bắt đầu làm việc. Lưu phản hồi/trạng thái cùng transaction và dùng advisory lock; raw authenticated writes bị chặn, audit ghi actor/thời điểm.
+
 ## Quy tắc minh chứng hiện tại: HR chỉ xử lý ngoại lệ (migration 8)
 
 Quy tắc này thay thế yêu cầu review thủ công bắt buộc được mô tả ở các mốc cũ bên dưới. Áp dụng `202610180008_evidence_exceptions.sql` sau migration 7; local tự áp dụng, chưa thay đổi cloud. Engine `local-ocr-rules-v2`: đủ trường khớp, đúng snapshot tên/khai báo và hash hiện tại, không đọc thiếu trang → tự tính điểm ngoại ngữ/thành tích, không cần HR duyệt. Thành tích cần cả tên, đơn vị cấp và cấp (`school|national|international`); hỗ trợ nhãn `Level`/`Cấp` rõ ràng. Điểm tối đa và công thức giữ nguyên. Nhãn “Khớp thông tin tự động” không xác nhận tính thật từ đơn vị cấp.

@@ -66,3 +66,10 @@ export interface HiringReport {
   revision:number;basis:string;weights:HiringWeights;roundOne:number;coding:number|null;interview:number|null;finalScore:number|null;reasons:string[];
   history:HiringDecision[];
 }
+export interface OfferInput {expectedOfferId:string|null;expectedDecisionId:string;expectedBasis:string;positionTitle:string;startDate:string;content:string;}
+export interface OfferResponseInput {expectedRevision:number;outcome:'accepted'|'declined';note:string;}
+export interface RecruitmentOffer {
+  id:string;application_id:string;decision_id:string;position_title:string;start_date:string;content:string;
+  status:'pending'|'superseded'|'accepted'|'declined';revision:number;issued_by:string;issued_at:string;
+  responded_by:string|null;responded_at:string|null;response_note:string;candidate_name:string;actionable:boolean;
+}

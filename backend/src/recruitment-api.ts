@@ -9,6 +9,7 @@ import { validateDeclaration, checkEvidence, claimsHash, type extractEvidence } 
 import type { RoundOneScope } from '../../shared/recruitment';
 import { validateRoundTwo } from './round-two-validation';
 import {validateHiringDecision,validateHiringWeights} from './hiring-validation';
+import {validateOffer,validateOfferResponse} from './offer-validation';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
@@ -78,6 +79,24 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
   router.get('/invitations',handle(async(req,res)=>{
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
     res.json({invitations:await db.invitations()});
+  }));
+  router.get('/offers',handle(async(req,res)=>{
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    res.json({offers:await db.offers()});
+  }));
+  router.post('/applications/:id/offers',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được phát hành offer.');
+    if(!await db.application(req.params.id))throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    res.status(201).json({id:await db.issueOffer(req.params.id,validateOffer(req.body))});
+  }));
+  router.post('/offers/:id/respond',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã offer không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='candidate')throw new ApiError(403,'Chỉ ứng viên được phản hồi offer của mình.');
+    if(!await db.visibleOffer(req.params.id))throw new ApiError(404,'Không tìm thấy offer.');
+    await db.respondOffer(req.params.id,validateOfferResponse(req.body));res.json({ok:true});
   }));
   router.get('/evidence-exceptions',handle(async(req,res)=>{
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');

@@ -6,9 +6,14 @@ import type { RoundOneScope,RoundOneReport,InterviewInvitation } from '../../sha
 import type { RoundTwoReport,RoundTwoMutation } from '../../shared/recruitment';
 import type { HiringReport,HiringWeights,HiringDecisionInput,HiringDecision } from '../../shared/recruitment';
 import type { EvidenceAssessment,EvidenceExceptionReport,EvidenceResolutionInput } from '../../shared/recruitment';
+import type {RecruitmentOffer,OfferInput,OfferResponseInput} from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  offers():Promise<RecruitmentOffer[]>;
+  visibleOffer(id:string):Promise<boolean>;
+  issueOffer(id:string,input:OfferInput):Promise<string>;
+  respondOffer(id:string,input:OfferResponseInput):Promise<void>;
   evidenceAssessment(id:string):Promise<EvidenceAssessment|null>;
   evidenceExceptions():Promise<EvidenceExceptionReport>;
   resolveEvidence(id:string,input:EvidenceResolutionInput):Promise<void>;
@@ -52,6 +57,10 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async offers(){const r=await client.rpc('read_offers');if(r.error)throw r.error;return r.data as RecruitmentOffer[];},
+    async visibleOffer(id){const r=await client.from('recruitment_offers').select('id').eq('id',id).maybeSingle();if(r.error)throw r.error;return Boolean(r.data);},
+    async issueOffer(id,input){const r=await client.rpc('issue_offer',{target:id,expected_decision:input.expectedDecisionId,expected_basis:input.expectedBasis,expected_offer:input.expectedOfferId,position_title:input.positionTitle,start_date:input.startDate,content:input.content});if(r.error)throw r.error;return r.data as string;},
+    async respondOffer(id,input){const r=await client.rpc('respond_offer',{target:id,expected_revision:input.expectedRevision,outcome:input.outcome,note:input.note});if(r.error)throw r.error;},
     async evidenceAssessment(id){const r=await client.rpc('evidence_assessment',{target:id});if(r.error)throw r.error;return r.data as EvidenceAssessment|null;},
     async evidenceExceptions(){const r=await client.rpc('evidence_exceptions');if(r.error)throw r.error;return r.data as EvidenceExceptionReport;},
     async resolveEvidence(id,input){const r=await client.rpc('resolve_evidence_exception',{target:id,expected_basis:input.expectedBasis,outcome:input.outcome,explanation:input.reason});if(r.error)throw r.error;},

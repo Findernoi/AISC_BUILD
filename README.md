@@ -28,9 +28,13 @@ Mở [cổng ứng tuyển](http://127.0.0.1:3000/?view=applications), chọn t�
 5. Vòng 1 do database tính: GPA tối đa 25, kỹ năng khớp từ khóa tối đa 30, dự án/kinh nghiệm tự khai tối đa 20, ngoại ngữ tối đa 15, thành tích tối đa 10; GPA từ 3.6/4 cộng 3, tổng tối đa 100. GPA thang 10 quy về thang 4. Điểm từ 75 và đủ điều kiện mới được xếp top 10 theo bộ lọc. HR chọn 1–10 hồ sơ; database kiểm tra lại cả danh sách khi lưu lời mời.
 6. Vòng 2 lưu lịch, hướng dẫn, điểm bài test bên ngoài app (0–100) và phiếu 5 tiêu chí phỏng vấn (1–10 kèm bằng chứng). Ứng viên chỉ xem lịch/hướng dẫn của mình; đánh giá nội bộ chỉ HR xem. Lưu dữ liệu cũ trả 409 thay vì ghi đè.
 7. Tổng hợp mặc định 30% vòng 1 + 30% bài test + 40% phỏng vấn. HR có thể đổi tỷ trọng số nguyên tổng 100. Database tính điểm đến hai chữ số thập phân, chỉ khi đủ các đánh giá; điểm bài test 0 là hợp lệ. Không tự quyết định theo ngưỡng hoặc xác suất placement.
-8. HR lưu chọn tuyển/dự phòng/không chọn kèm lý do, điểm và tỷ trọng tại thời điểm quyết định. Chọn tuyển chuyển `offer/passed`, chưa phải `accepted`; kết quả khác là `interview/hold` hoặc `interview/rejected`. Lịch sử giữ nguyên; thay đổi căn cứ cần duyệt lại. Chưa gửi email, tạo offer letter hoặc nhận phản hồi chấp nhận/từ chối offer.
+8. HR lưu chọn tuyển/dự phòng/không chọn kèm lý do, điểm và tỷ trọng tại thời điểm quyết định. Chọn tuyển chuyển `offer/passed`, chưa phải `accepted`; kết quả khác là `interview/hold` hoặc `interview/rejected`. Lịch sử giữ nguyên; thay đổi căn cứ cần duyệt lại. HR có thể phát hành offer trong ứng dụng và ứng viên phản hồi chấp nhận/từ chối; chưa gửi email hoặc tạo offer letter PDF.
 
 Vòng 1 xếp trên toàn bộ hồ sơ trong bộ lọc rồi giới hạn 200 dòng hiển thị. Danh sách hồ sơ/vị trí/lời mời của portal giới hạn 200; bảng vòng 2/tổng hợp dựa trên tập đang tải, không phải báo cáo toàn bộ database. Hàng chờ ngoại lệ đếm toàn bộ và hiển thị 200 tệp cũ nhất. Xem [schema, công thức, API và giới hạn](backend/database/README.md).
+
+## Offer và phản hồi trong demo
+
+Sau quyết định chọn tuyển, HR nhập vị trí, ngày bắt đầu dự kiến và nội dung trong **Offer và phản hồi ứng viên**. Ứng viên xem offer riêng và phản hồi trong **Thông báo offer của tôi**. Chấp nhận chuyển hồ sơ sang accepted/passed, từ chối sang withdrawn/rejected; bảng offer giữ trạng thái declined để phân biệt với HR không chọn. Chấp nhận đề nghị chưa phải đã bắt đầu làm việc. Bản thay thế/đã phản hồi/căn cứ lỗi thời không được phản hồi. Xem [kịch bản demo, quy tắc và API](docs/OFFERS_DEMO.md).
 
 ## Kiểm tra toàn luồng
 
@@ -46,7 +50,7 @@ npm run build
 
 ## Supabase cloud và production
 
-`npm run dev` dùng Supabase Auth/JWT người gọi, không có đăng nhập mẫu. Chưa áp dụng migrations tuyển dụng lên cloud. Dùng các migration `202610180001` đến `202610180008` theo thứ tự, cấp HR qua kho vai trò riêng, cấu hình private storage và kiểm tra quyền thật trước khi vận hành. Không tạo bảng `profiles/jobs` từ ví dụ rời; dùng [hướng dẫn database](backend/database/README.md) và `.env.example`.
+`npm run dev` dùng Supabase Auth/JWT người gọi, không có đăng nhập mẫu. Chưa áp dụng migrations tuyển dụng lên cloud. Dùng các migration `202610180001` đến `202610180009` theo thứ tự, cấp HR qua kho vai trò riêng, cấu hình private storage và kiểm tra quyền thật trước khi vận hành. Không tạo bảng `profiles/jobs` từ ví dụ rời; dùng [hướng dẫn database](backend/database/README.md) và `.env.example`.
 
 `.env` đặt ở gốc, không in nội dung hoặc commit. Chỉ biến `VITE_` được đưa vào trình duyệt; service-role/Gemini key chỉ phía server. Metadata nghiệp vụ dùng JWT/RLS người gọi; service-role chỉ phục vụ các tác vụ server đã tách riêng như ghi kết quả OCR và lưu byte tệp, không dùng để né quyền HR.
 
@@ -57,7 +61,7 @@ $env:NODE_ENV="production"
 npm start
 ```
 
-Đăng nhập cloud cần email đã xác nhận. Kiểm tra định dạng email ở local không chứng minh quyền sở hữu hộp thư/tư cách sinh viên. Chưa triển khai OTP riêng, email thật, phản hồi offer hoặc đồng bộ dữ liệu trình duyệt cũ.
+Đăng nhập cloud cần email đã xác nhận. Kiểm tra định dạng email ở local không chứng minh quyền sở hữu hộp thư/tư cách sinh viên. Chưa triển khai OTP riêng, email thật hoặc đồng bộ dữ liệu trình duyệt cũ.
 
 ## Demo frontend cũ và dự báo
 

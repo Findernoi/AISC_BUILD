@@ -4,7 +4,7 @@ Mã Express hiện có nằm trong `src/server.ts`. Chạy từ thư mục gốc
 
 ## Database giai đoạn 1
 
-Đã có [schema, migration và hướng dẫn](database/README.md), kho vai trò HR riêng và Supabase Auth. Tám migration đã được kiểm thử qua PostgreSQL/PGlite, chưa áp dụng cloud. Cổng `/?view=applications` đã dùng database từ nộp hồ sơ đến quyết định; demo ở trang gốc và dự báo vẫn dùng dữ liệu trình duyệt.
+Đã có [schema, migration và hướng dẫn](database/README.md), kho vai trò HR riêng và Supabase Auth. Chín migration đã được kiểm thử qua PostgreSQL/PGlite, chưa áp dụng cloud. Cổng `/?view=applications` đã dùng database từ nộp hồ sơ đến quyết định; demo ở trang gốc và dự báo vẫn dùng dữ liệu trình duyệt.
 
 ```powershell
 npm run test:database
@@ -67,3 +67,8 @@ OCR chạy trong worker Node tách biệt, giới hạn 5 trang, 12 megapixel ch
 - `POST /api/recruitment/round-one/local-demo`: HR local thêm một lần bộ 12 hồ sơ giả để thử top 10. Production không có đường này.
 
 Tính điểm và lựa chọn nằm trong RPC PostgreSQL dưới JWT người gọi; không dùng service-role để bỏ qua quyền HR. Chi tiết công thức, đồng thời và giới hạn ở database/README.md.
+
+
+## Offer và phản hồi ứng viên
+
+Migration 9, API /offers và /applications/:id/offers bổ sung phát hành offer trong ứng dụng, lịch sử thay thế và phản hồi accepted/declined theo quyền chủ hồ sơ. HR không phản hồi thay ứng viên; không gửi email thật. Xem [quy tắc, API và kịch bản demo](../docs/OFFERS_DEMO.md).

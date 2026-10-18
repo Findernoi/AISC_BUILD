@@ -9,11 +9,12 @@ import type { RoundOneReport,InterviewInvitation } from '../../shared/recruitmen
 import type { RoundTwoReport } from '../../shared/recruitment';
 import type { HiringReport,HiringDecision } from '../../shared/recruitment';
 import type {EvidenceAssessment,EvidenceExceptionReport} from '../../shared/recruitment';
+import type {RecruitmentOffer} from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
   const exists=await db.query<{relation:string|null}>(`select to_regclass('public.applications')::text as relation`);
-  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);await ensureExceptionsMigration(db);return;}
+  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);await ensureExceptionsMigration(db);await ensureOffersMigration(db);return;}
   // Local-only bootstrap. Never run this harness against Supabase.
   const source=(await readFile(migrationUrl,'utf8'))+'\n'+(await readFile(roleMigrationUrl,'utf8'));
   await db.transaction(async tx=>{
@@ -36,6 +37,11 @@ export async function initializeLocalRecruitment(db: PGlite) {
   await ensureRoundTwoMigration(db);
   await ensureHiringMigration(db);
   await ensureExceptionsMigration(db);
+  await ensureOffersMigration(db);
+}
+async function ensureOffersMigration(db:PGlite) {
+  const found=await db.query<{fn:string|null}>("select to_regprocedure('public.read_offers()')::text as fn");
+  if(!found.rows[0].fn)await db.exec(await readFile(new URL('../database/migrations/202610180009_offers.sql',import.meta.url),'utf8'));
 }
 async function ensureExceptionsMigration(db:PGlite) {
   const found=await db.query<{fn:string|null}>("select to_regprocedure('public.evidence_exceptions()')::text as fn");
@@ -77,6 +83,10 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    offers:()=>withIdentity(db,identity,async tx=>(await tx.query<{offers:RecruitmentOffer[]}>('select public.read_offers() as offers')).rows[0].offers),
+    visibleOffer:id=>withIdentity(db,identity,async tx=>(await tx.query('select id from public.recruitment_offers where id=$1',[id])).rows.length>0),
+    issueOffer:(id,input)=>withIdentity(db,identity,async tx=>(await tx.query<{id:string}>('select public.issue_offer($1::uuid,$2::uuid,$3,$4::uuid,$5,$6::date,$7) as id',[id,input.expectedDecisionId,input.expectedBasis,input.expectedOfferId,input.positionTitle,input.startDate,input.content])).rows[0].id),
+    respondOffer:(id,input)=>withIdentity(db,identity,async tx=>{await tx.query('select public.respond_offer($1::uuid,$2::bigint,$3,$4)',[id,input.expectedRevision,input.outcome,input.note]);}),
     evidenceAssessment:id=>withIdentity(db,identity,async tx=>(await tx.query<{result:EvidenceAssessment|null}>('select public.evidence_assessment($1::uuid) as result',[id])).rows[0].result),
     evidenceExceptions:()=>withIdentity(db,identity,async tx=>(await tx.query<{report:EvidenceExceptionReport}>('select public.evidence_exceptions() as report')).rows[0].report),
     resolveEvidence:(id,input)=>withIdentity(db,identity,async tx=>{await tx.query('select public.resolve_evidence_exception($1::uuid,$2,$3,$4)',[id,input.expectedBasis,input.outcome,input.reason]);}),
