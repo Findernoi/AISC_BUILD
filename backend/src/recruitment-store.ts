@@ -3,9 +3,12 @@ import type { ApplicationInput, RecruitmentApplication, RecruitmentJob, Recruitm
 import { ApiError } from './recruitment-validation';
 import type { EvidenceCheck, CheckRegistration } from '../../shared/recruitment';
 import type { RoundOneScope,RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
+import type { RoundTwoReport,RoundTwoMutation } from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  roundTwo(id:string):Promise<RoundTwoReport|null>;
+  saveRoundTwo(id:string,input:RoundTwoMutation):Promise<void>;
   roundOne(scope:RoundOneScope):Promise<RoundOneReport>;
   invite(ids:string[],scope:RoundOneScope):Promise<InterviewInvitation[]>;
   invitations():Promise<InterviewInvitation[]>;
@@ -42,6 +45,8 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async roundTwo(id){const r=await client.rpc('read_round_two',{target:id});if(r.error)throw r.error;return r.data as RoundTwoReport|null;},
+    async saveRoundTwo(id,input){const r=await client.rpc('save_round_two',{target:id,expected_revision:input.expectedRevision,kind:input.kind,payload:input.data});if(r.error)throw r.error;},
     async roundOne(scope){const r=await client.rpc('round_one_report',{job_filter:scope.jobId,major_filter:scope.major});if(r.error)throw r.error;return r.data as RoundOneReport;},
     async invite(ids,scope){const r=await client.rpc('invite_round_one',{application_ids:ids,job_filter:scope.jobId,major_filter:scope.major});if(r.error)throw r.error;return r.data as InterviewInvitation[];},
     async invitations(){const r=await client.from('interview_invitations').select('application_id,invited_by,invited_at,round_one_score,scope').order('invited_at',{ascending:false}).limit(200);if(r.error)throw r.error;return r.data as InterviewInvitation[];},

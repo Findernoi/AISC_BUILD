@@ -39,3 +39,15 @@ export interface RoundOneRow {
   reasons:string[];rank:number|null;inTopTen:boolean;invitation:InterviewInvitation|null;
 }
 export interface RoundOneReport {version:string;threshold:number;total:number;qualified:number;rows:RoundOneRow[];}
+export type InterviewCriterion = 'technical'|'reasoning'|'learning'|'projects'|'communication';
+export interface InterviewScheduleInput { starts_at:string; duration_minutes:number; location:string; interviewer:string; instructions:string; }
+export interface InterviewSchedule extends InterviewScheduleInput { application_id:string; updated_by:string; updated_at:string; }
+export interface InterviewEvaluationInput { scores:Record<InterviewCriterion,number>; evidence:Record<InterviewCriterion,string>; }
+export interface CodingEvaluationInput { score:number; notes:string; }
+export type RoundTwoMutation = {expectedRevision:number} & (
+  {kind:'schedule';data:InterviewScheduleInput}|{kind:'interview';data:InterviewEvaluationInput}|{kind:'coding';data:CodingEvaluationInput});
+export interface RoundTwoReport {
+  revision:number; schedule:InterviewSchedule|null;
+  coding:(CodingEvaluationInput & {reviewed_by:string;reviewed_at:string})|null;
+  interview:(Record<InterviewCriterion,number|string> & {evidence:Record<InterviewCriterion,string>;overall_score:number|string;reviewed_by:string;reviewed_at:string})|null;
+}

@@ -7,6 +7,7 @@ import { supabaseStore, type RecruitmentStore } from './recruitment-store';
 import { cloudFileStorage, diskFileStorage, isUuid, MAX_FILE_BYTES, readEvidence, uploadEvidence, type FileStorage } from './recruitment-files';
 import { validateDeclaration, checkEvidence, claimsHash, type extractEvidence } from './evidence-analysis';
 import type { RoundOneScope } from '../../shared/recruitment';
+import { validateRoundTwo } from './round-two-validation';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
@@ -33,9 +34,9 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
       if(error instanceof ApiError) {res.status(error.status).json({error:error.message});return;}
       const code=(error as {code?:string})?.code;
       if(code==='23505') {res.status(409).json({error:'Bạn đã nộp hồ sơ cho vị trí này.'});return;}
-      if(['40001','40P01'].includes(code??'')){res.status(409).json({error:'Danh sách hoặc điều kiện đã thay đổi. Hãy tải lại vòng 1 rồi chọn lại; chưa lưu lời mời mới trong yêu cầu này.'});return;}
+      if(['40001','40P01'].includes(code??'')){res.status(409).json({error:'Dữ liệu đã thay đổi. Hãy tải lại vòng tuyển dụng rồi thử lại; yêu cầu này chưa được lưu.'});return;}
       if(code==='42501') {res.status(403).json({error:'Bạn không có quyền thực hiện thao tác này hoặc vị trí đã đóng.'});return;}
-      if(['23514','23502','22P02','23503','22023'].includes(code ?? '')) {res.status(400).json({error:'Dữ liệu không hợp lệ hoặc vị trí không còn tồn tại.'});return;}
+      if(['23514','23502','22P02','23503','22023','22007','22008','22003'].includes(code ?? '')) {res.status(400).json({error:'Dữ liệu không hợp lệ hoặc vị trí không còn tồn tại.'});return;}
       if(['42P01','42883','PGRST202','PGRST205'].includes(code ?? '')) {res.status(503).json({error:'Database chưa sẵn sàng. Cần áp dụng các migration tuyển dụng tương ứng trước.'});return;}
       console.error('Recruitment API failed:',code ?? (error instanceof Error ? error.name : 'unknown'));
       res.status(503).json({error:'Chưa kết nối được database tuyển dụng. Vui lòng thử lại.'});
@@ -76,6 +77,20 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
   router.get('/invitations',handle(async(req,res)=>{
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
     res.json({invitations:await db.invitations()});
+  }));
+  router.get('/applications/:id/round-two',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    const report=await db.roundTwo(req.params.id);if(!report)throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    res.json({report});
+  }));
+  router.post('/applications/:id/round-two',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được lưu lịch và điểm vòng 2.');
+    if(!await db.application(req.params.id))throw new ApiError(404,'Không tìm thấy hồ sơ.');
+    await db.saveRoundTwo(req.params.id,validateRoundTwo(req.body));
+    res.json({ok:true});
   }));
   router.post('/round-one/local-demo',handle(async(req,res)=>{
     if(!local)throw new ApiError(404,'Không có đường dẫn này.');

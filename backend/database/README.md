@@ -133,3 +133,14 @@ RPC mời kiểm tra lại quyền HR, bộ lọc, điều kiện và top 10 tro
 Advisory lock theo transaction và trigger trước statement đồng bộ hóa thay đổi vị trí, hồ sơ, tệp, review và lời mời với lúc chọn top 10. Đây là khóa toàn tổ chức trong phạm vi schema một tổ chức hiện tại; phù hợp bản đầu, sẽ cần đo tải và thu hẹp khóa nếu quy mô tăng. Không chạy OCR hay gọi mạng trong transaction mời. Raw insert vào invitations bị thu hồi khỏi authenticated; HR dùng RPC để không tự ghi điểm hoặc bỏ qua top 10. Quyền cập nhật các nghiệp vụ khác vẫn giữ RLS như trước.
 
 Kiểm thử PostgreSQL/PGlite gồm công thức tương đương frontend, hai thang GPA, thiếu/0, giới hạn số nguyên, top 10 khi có hơn 200 hồ sơ, bộ lọc, GPA thấp/vị trí đóng/rút đơn, chặn candidate/raw insert, rollback toàn batch, lời mời idempotent, OCR không cộng điểm, snapshot review và API JWT/RLS. Chưa chạy kiểm thử đồng thời nhiều kết nối PostgreSQL/Supabase cloud; PGlite dùng một kết nối. Chưa áp dụng migration cloud trong bước này.
+
+## Vòng 2 qua API/database (18/10/2026)
+
+Áp dụng thêm `202610180006_round_two.sql` sau migration 5 khi triển khai cloud. Chế độ `npm run dev:recruitment` tự áp dụng migration vào database local hiện có; không reset dữ liệu. Chưa áp dụng migration này lên cloud.
+
+Cổng `/?view=applications` có mục **Vòng 2 · Lịch và đánh giá phỏng vấn**. Chọn hồ sơ đã có lời mời: HR lưu lịch (ngày giờ, thời lượng, địa điểm/đường dẫn, người phỏng vấn, hướng dẫn), điểm bài test 0–100 và phiếu 5 tiêu chí 1–10 kèm bằng chứng. Database tính điểm phỏng vấn với trọng số 30/25/15/15/15; người ghi nhận lấy từ JWT/phiên HR. Ứng viên chỉ đọc lịch của mình; điểm, bằng chứng và ghi chú đánh giá vẫn chỉ dành cho HR. Chưa gửi email, tạo sự kiện lịch, tổng hợp quyết định/offer hoặc công bố điểm cho ứng viên.
+
+- `GET /api/recruitment/applications/:id/round-two`: `{report:{revision,schedule,coding,interview}}`; RLS che dữ liệu đánh giá khỏi ứng viên, hồ sơ người khác trả 404.
+- `POST /api/recruitment/applications/:id/round-two`: `{expectedRevision,kind,data}`, với `kind` là `schedule`, `coding`, `interview`; hợp đồng chi tiết ở `shared/recruitment.ts`.
+- Chỉ HR được ghi vào hồ sơ đã mời, stage `interview`, status `passed`. RPC `save_round_two` kiểm tra quyền, phiên bản và dữ liệu trong cùng transaction; phiên bản cũ trả 409. Khi gặp 409, bấm **Tải lại vòng 2**, kiểm tra dữ liệu mới và nhập lại thay đổi. Mỗi lần lưu tăng revision hồ sơ; chặn ghi trực tiếp bảng điểm qua authenticated để không bỏ qua kiểm tra này.
+- Giờ lưu dạng timestamptz; ô nhập dùng múi giờ trình duyệt, lịch đã lưu hiển thị giờ Việt Nam. Chỉ lưu thông tin lịch, không kiểm tra trùng lịch của người phỏng vấn.
