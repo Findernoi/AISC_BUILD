@@ -6,6 +6,7 @@ import { ApiError, validateApplication, validateJob } from './recruitment-valida
 import { supabaseStore, type RecruitmentStore } from './recruitment-store';
 import { cloudFileStorage, diskFileStorage, isUuid, MAX_FILE_BYTES, readEvidence, uploadEvidence, type FileStorage } from './recruitment-files';
 import { validateDeclaration, checkEvidence, claimsHash, type extractEvidence } from './evidence-analysis';
+import type { RoundOneScope } from '../../shared/recruitment';
 
 const LOOPBACK=['127.0.0.1','::1','::ffff:127.0.0.1'];
 const COOKIE='recruitment_local_session';
@@ -32,9 +33,10 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
       if(error instanceof ApiError) {res.status(error.status).json({error:error.message});return;}
       const code=(error as {code?:string})?.code;
       if(code==='23505') {res.status(409).json({error:'Bạn đã nộp hồ sơ cho vị trí này.'});return;}
+      if(['40001','40P01'].includes(code??'')){res.status(409).json({error:'Danh sách hoặc điều kiện đã thay đổi. Hãy tải lại vòng 1 rồi chọn lại; chưa lưu lời mời mới trong yêu cầu này.'});return;}
       if(code==='42501') {res.status(403).json({error:'Bạn không có quyền thực hiện thao tác này hoặc vị trí đã đóng.'});return;}
-      if(['23514','23502','22P02','23503'].includes(code ?? '')) {res.status(400).json({error:'Dữ liệu không hợp lệ hoặc vị trí không còn tồn tại.'});return;}
-      if(['42P01','42883','PGRST202','PGRST205'].includes(code ?? '')) {res.status(503).json({error:'Database chưa sẵn sàng. Cần áp dụng hai migration tuyển dụng trước.'});return;}
+      if(['23514','23502','22P02','23503','22023'].includes(code ?? '')) {res.status(400).json({error:'Dữ liệu không hợp lệ hoặc vị trí không còn tồn tại.'});return;}
+      if(['42P01','42883','PGRST202','PGRST205'].includes(code ?? '')) {res.status(503).json({error:'Database chưa sẵn sàng. Cần áp dụng các migration tuyển dụng tương ứng trước.'});return;}
       console.error('Recruitment API failed:',code ?? (error instanceof Error ? error.name : 'unknown'));
       res.status(503).json({error:'Chưa kết nối được database tuyển dụng. Vui lòng thử lại.'});
     }
@@ -53,6 +55,35 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
   router.get('/session',handle(async(req,res)=>{
     const configured=local || Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
     res.json({mode:local?'local':'supabase',configured,user:configured ? (await store(req)).user : null});
+  }));
+  const roundScope=(value:Record<string,unknown>):RoundOneScope=>{
+    const jobId=value.jobId??'all',major=value.major??'all';
+    if(typeof jobId!=='string'||(jobId!=='all'&&!isUuid(jobId))||typeof major!=='string'||!['all','AI','KHMT','KTPM'].includes(major))throw new ApiError(400,'Bộ lọc vòng 1 không hợp lệ.');
+    return {jobId:jobId==='all'?null:jobId,major:major as RoundOneScope['major']};
+  };
+  router.get('/round-one',handle(async(req,res)=>{
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được xem xếp hạng.');
+    res.json({report:await db.roundOne(roundScope(req.query))});
+  }));
+  router.post('/round-one/invitations',handle(async(req,res)=>{
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được mời vào vòng 2.');
+    const body=req.body;
+    if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['applicationIds','jobId','major'].includes(k))||!Array.isArray(body.applicationIds)||body.applicationIds.length<1||body.applicationIds.length>10||body.applicationIds.some((id:unknown)=>!isUuid(id))||new Set(body.applicationIds).size!==body.applicationIds.length)throw new ApiError(400,'Chọn từ 1 đến 10 hồ sơ khác nhau; không gửi điểm hoặc người mời.');
+    res.json({invitations:await db.invite(body.applicationIds,roundScope(body))});
+  }));
+  router.get('/invitations',handle(async(req,res)=>{
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    res.json({invitations:await db.invitations()});
+  }));
+  router.post('/round-one/local-demo',handle(async(req,res)=>{
+    if(!local)throw new ApiError(404,'Không có đường dẫn này.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR mẫu được tạo bộ thử.');
+    const {localRecruitmentDatabase}=await import('./recruitment-local');
+    const {seedRoundOneDemo}=await import('./round-one-demo');
+    res.json({jobId:await seedRoundOneDemo(await (options.database??localRecruitmentDatabase)())});
   }));
   router.post('/local-session',handle(async(req,res)=>{
     if(!local)throw new ApiError(404,'Không có đường dẫn này.');

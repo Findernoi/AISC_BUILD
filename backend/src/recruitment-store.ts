@@ -2,9 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { ApplicationInput, RecruitmentApplication, RecruitmentJob, RecruitmentUser, RecruitmentFile, FileRegistration } from '../../shared/recruitment';
 import { ApiError } from './recruitment-validation';
 import type { EvidenceCheck, CheckRegistration } from '../../shared/recruitment';
+import type { RoundOneScope,RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  roundOne(scope:RoundOneScope):Promise<RoundOneReport>;
+  invite(ids:string[],scope:RoundOneScope):Promise<InterviewInvitation[]>;
+  invitations():Promise<InterviewInvitation[]>;
   check(fileId:string):Promise<EvidenceCheck|null>;
   saveCheck(input:CheckRegistration):Promise<EvidenceCheck>;
   jobs(): Promise<RecruitmentJob[]>;
@@ -14,7 +18,7 @@ export interface RecruitmentStore {
   file(id:string): Promise<RecruitmentFile | null>;
   registerFile(input:FileRegistration): Promise<RecruitmentFile>;
   apply(input: ApplicationInput): Promise<RecruitmentApplication>;
-  createJob(input: {title:string;department:string;description:string;location:string;min_gpa:number}): Promise<RecruitmentJob>;
+  createJob(input: {title:string;department:string;description:string;location:string;min_gpa:number;requirements?:string[]}): Promise<RecruitmentJob>;
 }
 // Select explicit fields: internal evaluations/decisions never enter this API.
 export const JOB_COLUMNS = 'id,title,department,description,location,requirements,min_gpa,status';
@@ -38,6 +42,9 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async roundOne(scope){const r=await client.rpc('round_one_report',{job_filter:scope.jobId,major_filter:scope.major});if(r.error)throw r.error;return r.data as RoundOneReport;},
+    async invite(ids,scope){const r=await client.rpc('invite_round_one',{application_ids:ids,job_filter:scope.jobId,major_filter:scope.major});if(r.error)throw r.error;return r.data as InterviewInvitation[];},
+    async invitations(){const r=await client.from('interview_invitations').select('application_id,invited_by,invited_at,round_one_score,scope').order('invited_at',{ascending:false}).limit(200);if(r.error)throw r.error;return r.data as InterviewInvitation[];},
     async check(id) {const r=await client.from('evidence_checks').select('*').eq('file_id',id).order('created_at',{ascending:false}).limit(1).maybeSingle();if(r.error)throw r.error;return r.data as EvidenceCheck|null;},
     async saveCheck(input) {
       const service=process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -214,3 +214,9 @@ Cổng ứng tuyển tự đọc tệp mới sau upload: PDF có lớp chữ dù
 Mở **CV và minh chứng → Kết quả đọc và đối chiếu tự động** để xem từng trường khai báo/đọc được và căn cứ theo trang. Kết quả chỉ là khớp/sai lệch/chưa rõ/không đọc được; chưa xác minh từ đơn vị cấp, không tự cộng điểm hoặc loại ứng viên. HR vẫn cần xử lý trường hợp chưa rõ và xác minh tính thật khi cần.
 
 Chạy local vẫn bằng `npm run dev:recruitment`; dữ liệu OCR và kết quả nằm trên máy. Cloud cần migration thứ tư `202610180004_evidence_checks.sql`; chưa tự áp dụng. Xem [phạm vi và giới hạn](backend/database/README.md#doc-va-doi-chieu-tu-dong).
+
+## Vòng 1 và top 10 qua backend
+
+Trong `/?view=applications`, HR có mục **Vòng 1 và top 10 · Database**: lọc vị trí/ngành, xem điểm thành phần và lý do chưa đủ điều kiện, chọn hồ sơ để lưu lời mời vòng 2. Database tính lại trên toàn bộ hồ sơ và kiểm tra top 10 khi lưu, không nhận điểm từ trình duyệt. Ứng viên đọc được lời mời của mình; chưa gửi email hoặc đặt lịch tự động.
+
+Chạy `npm run dev:recruitment`, đăng nhập HR mẫu, bấm **Thêm bộ hồ sơ thử vòng 1** để có 12 hồ sơ giả và thử giới hạn top 10. Bộ thử chỉ có local, không sửa hồ sơ đã nộp hoặc gửi thư. Cloud cần migration thứ năm `202610180005_round_one.sql`, chưa tự áp dụng.

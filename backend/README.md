@@ -58,3 +58,12 @@ Frontend dùng PDF.js tải khi mở PDF; fonts/codecs được chuẩn bị t�
 Upload có thể gửi khai báo JSON mã hóa URL trong header `X-Evidence-Declaration`: credential, score, issued_on, reference cho chứng chỉ; title/issuer cho thành tích. Tên lấy từ hồ sơ phía server. Khai báo gắn bất biến với phiên bản tệp; thêm bản mới nếu cần sửa thông tin liên quan tới tệp.
 
 OCR chạy trong worker Node tách biệt, giới hạn 5 trang, 12 megapixel cho ảnh đầu vào và 60 giây/tệp. Mỗi process xử lý một tệp tại một thời điểm, báo bận thay vì xếp hàng vô hạn. Model Anh/Việt đi kèm npm, được chép vào `.local/ocr-traineddata/` khi cần; không tải từ CDN hoặc gọi API AI lúc đọc hồ sơ. Production cần môi trường Node hỗ trợ `@napi-rs/canvas`, đủ CPU/RAM và quyền ghi thư mục model local.
+
+## Vòng 1 và lời mời vòng 2
+
+- `GET /api/recruitment/round-one?jobId=all|UUID&major=all|AI|KHMT|KTPM`: HR xem điểm và xếp hạng. Trả tối đa 200 dòng sau khi tính trên toàn bộ dữ liệu.
+- `POST /api/recruitment/round-one/invitations`: body `{applicationIds: [UUID], jobId: "all"|UUID, major: "all"|"AI"|"KHMT"|"KTPM"}`. Chỉ HR, 1–10 ID khác nhau. Không nhận điểm hoặc người mời từ client.
+- `GET /api/recruitment/invitations`: HR đọc lời mời, ứng viên chỉ đọc lời mời thuộc hồ sơ của mình qua RLS.
+- `POST /api/recruitment/round-one/local-demo`: HR local thêm một lần bộ 12 hồ sơ giả để thử top 10. Production không có đường này.
+
+Tính điểm và lựa chọn nằm trong RPC PostgreSQL dưới JWT người gọi; không dùng service-role để bỏ qua quyền HR. Chi tiết công thức, đồng thời và giới hạn ở database/README.md.

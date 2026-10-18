@@ -5,11 +5,12 @@ import { AUTH_HARNESS, migrationUrl, withIdentity } from './database-preview';
 import { PREVIEW_IDENTITIES, type PreviewIdentity } from '../../shared/database';
 import { APPLICATION_COLUMNS, JOB_COLUMNS, type RecruitmentStore } from './recruitment-store';
 import type { RecruitmentApplication, RecruitmentJob, RecruitmentFile, EvidenceCheck } from '../../shared/recruitment';
+import type { RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
   const exists=await db.query<{relation:string|null}>(`select to_regclass('public.applications')::text as relation`);
-  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);return;}
+  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);return;}
   // Local-only bootstrap. Never run this harness against Supabase.
   const source=(await readFile(migrationUrl,'utf8'))+'\n'+(await readFile(roleMigrationUrl,'utf8'));
   await db.transaction(async tx=>{
@@ -28,6 +29,11 @@ export async function initializeLocalRecruitment(db: PGlite) {
       ('Thực tập sinh Backend','Backend','Xây dựng API và làm việc với cơ sở dữ liệu. Vị trí mẫu để thử nộp hồ sơ.',ARRAY['Node.js','SQL'],3.0)`);
   });
   await ensureEvidenceMigration(db);
+  await ensureRoundOneMigration(db);
+}
+async function ensureRoundOneMigration(db:PGlite) {
+  const found=await db.query<{fn:string|null}>("select to_regprocedure('public.round_one_report(uuid,text)')::text as fn");
+  if(!found.rows[0].fn)await db.exec(await readFile(new URL('../database/migrations/202610180005_round_one.sql',import.meta.url),'utf8'));
 }
 async function ensureEvidenceMigration(db:PGlite) {
   const found=await db.query<{relation:string|null}>("select to_regclass('public.evidence_checks')::text as relation");
@@ -53,6 +59,9 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    roundOne:scope=>withIdentity(db,identity,async tx=>(await tx.query<{report:RoundOneReport}>('select public.round_one_report($1::uuid,$2) as report',[scope.jobId,scope.major])).rows[0].report),
+    invite:(ids,scope)=>withIdentity(db,identity,async tx=>(await tx.query<{invitations:InterviewInvitation[]}>('select public.invite_round_one($1::uuid[],$2::uuid,$3) as invitations',[ids,scope.jobId,scope.major])).rows[0].invitations),
+    invitations:()=>withIdentity(db,identity,async tx=>(await tx.query<InterviewInvitation>('select application_id,invited_by,invited_at,round_one_score,scope from public.interview_invitations order by invited_at desc limit 200')).rows),
     check:id=>withIdentity(db,identity,async tx=>(await tx.query<EvidenceCheck>('select * from public.evidence_checks where file_id=$1 order by created_at desc,id desc limit 1',[id])).rows[0]??null),
     saveCheck:async input=>{
       // Privileged insert only for server-produced, advisory extraction; caller already authorized the file through RLS.
@@ -74,7 +83,7 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
       return result.rows[0];
     }),
     createJob:input=>withIdentity(db,identity,async tx=>{
-      const result=await tx.query<RecruitmentJob>(`insert into public.jobs(title,department,description,location,min_gpa) values($1,$2,$3,$4,$5) returning ${JOB_COLUMNS}`,[input.title,input.department,input.description,input.location,input.min_gpa]);
+      const result=await tx.query<RecruitmentJob>(`insert into public.jobs(title,department,description,location,min_gpa,requirements) values($1,$2,$3,$4,$5,$6) returning ${JOB_COLUMNS}`,[input.title,input.department,input.description,input.location,input.min_gpa,input.requirements??[]]);
       return result.rows[0];
     }),
   };

@@ -36,6 +36,8 @@ export function validateApplication(value: unknown): ApplicationInput {
 }
 export function validateJob(value: unknown) {
   const d = object(value);
-  if (Object.keys(d).some(k=>!['title','department','description','location','min_gpa'].includes(k))) throw new ApiError(400,'Vị trí có trường không được phép gửi.');
-  return {title:text(d,'title',200,true),department:text(d,'department',160,true),description:text(d,'description',10000),location:text(d,'location',200),min_gpa:numeric(d.min_gpa,'min_gpa',4)!};
+  if (Object.keys(d).some(k=>!['title','department','description','location','min_gpa','requirements'].includes(k))) throw new ApiError(400,'Vị trí có trường không được phép gửi.');
+  const requirements=d.requirements??[];
+  if(!Array.isArray(requirements)||requirements.length>30||requirements.some(s=>typeof s!=='string'||!s.trim()||s.length>80))throw new ApiError(400,'Yêu cầu kỹ năng không hợp lệ.');
+  return {title:text(d,'title',200,true),department:text(d,'department',160,true),description:text(d,'description',10000),location:text(d,'location',200),min_gpa:numeric(d.min_gpa,'min_gpa',4)!,requirements:[...new Set((requirements as string[]).map(s=>s.trim()))]};
 }

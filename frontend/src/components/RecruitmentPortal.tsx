@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import type { RecruitmentApplication, RecruitmentJob, RecruitmentSession } from '../../../shared/recruitment';
+import type { RecruitmentApplication, RecruitmentJob, RecruitmentSession, InterviewInvitation } from '../../../shared/recruitment';
 import { getSupabaseClient, supabase } from '../lib/supabase';
 import { Field, Panel } from './analytics/Shared';
 import { ApplicationFiles } from './ApplicationFiles';
+import { RoundOnePortal } from './RoundOnePortal';
 import { recruitmentFetch } from '../lib/recruitmentApi';
 
 async function api<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T> {
@@ -19,6 +20,7 @@ export function RecruitmentPortal() {
   const [session,setSession]=useState<RecruitmentSession|null>(null);
   const [jobs,setJobs]=useState<RecruitmentJob[]>([]);
   const [applications,setApplications]=useState<RecruitmentApplication[]>([]);
+  const [invitations,setInvitations]=useState<InterviewInvitation[]>([]);
   const [jobId,setJobId]=useState('');
   const [version,setVersion]=useState(0);
   const [loading,setLoading]=useState(true);
@@ -28,22 +30,23 @@ export function RecruitmentPortal() {
   const [signUp,setSignUp]=useState(false);
   const [localIdentity,setLocalIdentity]=useState('candidate_a');
   const [gpaScale,setGpaScale]=useState('4.0');
-  const refresh=()=>{setLoading(true);setSession(null);setApplications([]);setJobs([]);setVersion(v=>v+1);};
+  const refresh=()=>{setLoading(true);setSession(null);setApplications([]);setInvitations([]);setJobs([]);setVersion(v=>v+1);};
   useEffect(()=>{
     const controller=new AbortController();setLoading(true);setError('');
     void (async()=>{
       const next=await api<RecruitmentSession>('session',undefined,controller.signal);
       const jobData=next.configured?await api<{jobs:RecruitmentJob[]}>('jobs',undefined,controller.signal):{jobs:[]};
       const appData=next.user?await api<{applications:RecruitmentApplication[]}>('applications',undefined,controller.signal):{applications:[]};
+      const invitationData=next.user?await api<{invitations:InterviewInvitation[]}>('invitations',undefined,controller.signal):{invitations:[]};
       if(controller.signal.aborted)return;
-      setSession(next);setJobs(jobData.jobs);setApplications(appData.applications);
+      setSession(next);setJobs(jobData.jobs);setApplications(appData.applications);setInvitations(invitationData.invitations);
       setJobId(current=>jobData.jobs.some(j=>j.id===current&&j.status==='active')?current:jobData.jobs.find(j=>j.status==='active')?.id??'');
     })().catch(e=>{if(!controller.signal.aborted)setError(message(e));}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return()=>controller.abort();
   },[version]);
   useEffect(()=>{
     // Avoid async Supabase calls inside its auth-state callback.
-    const listener=supabase?.auth.onAuthStateChange(()=>{setSession(null);setApplications([]);setJobs([]);setLoading(true);setVersion(v=>v+1);});
+    const listener=supabase?.auth.onAuthStateChange(()=>{setSession(null);setApplications([]);setInvitations([]);setJobs([]);setLoading(true);setVersion(v=>v+1);});
     return()=>listener?.data.subscription.unsubscribe();
   },[]);
   const perform=async(fn:()=>Promise<void>)=>{setBusy(true);setError('');setNotice('');try{await fn();}catch(e){setError(message(e));}finally{setBusy(false);}};
@@ -73,7 +76,11 @@ export function RecruitmentPortal() {
   };
   const createJob=(event:React.FormEvent<HTMLFormElement>)=>{
     event.preventDefault();const form=new FormData(event.currentTarget);
-    void perform(async()=>{await api('jobs',{title:String(form.get('title')),department:String(form.get('department')),description:String(form.get('description')),location:String(form.get('location')),min_gpa:Number(form.get('min_gpa'))});setNotice('Đã tạo vị trí tuyển dụng.');refresh();});
+    void perform(async()=>{await api('jobs',{title:String(form.get('title')),department:String(form.get('department')),description:String(form.get('description')),location:String(form.get('location')),min_gpa:Number(form.get('min_gpa')),requirements:String(form.get('requirements')).split(',').map(s=>s.trim()).filter(Boolean)});setNotice('Đã tạo vị trí tuyển dụng.');refresh();});
+  };
+  const reloadBusiness=async()=>{
+    const [jobData,appData,invitationData]=await Promise.all([api<{jobs:RecruitmentJob[]}>('jobs'),api<{applications:RecruitmentApplication[]}>('applications'),api<{invitations:InterviewInvitation[]}>('invitations')]);
+    setJobs(jobData.jobs);setApplications(appData.applications);setInvitations(invitationData.invitations);
   };
   const currentJob=jobs.find(j=>j.id===jobId);
   const alreadyApplied=applications.some(a=>a.job_id===jobId);
@@ -100,8 +107,9 @@ export function RecruitmentPortal() {
           <Field label="Số dự án (không bắt buộc)"><input name="project_count" type="number" min={0} max={10000} step={1} /></Field><Field label="Số tháng kinh nghiệm (không bắt buộc)"><input name="experience_months" type="number" min={0} max={1200} step={1} /></Field>
         </div><Field label="Kỹ năng (ngăn cách bằng dấu phẩy)"><input name="skills" maxLength={2400} placeholder="Python, SQL" /></Field><Field label="Mô tả dự án"><textarea name="project_description" rows={3} maxLength={10000} /></Field><p className="text-xs text-slate-400">Nộp thông tin trước, sau đó thêm CV và minh chứng tại hồ sơ đã lưu bên dưới.</p><button className="btn-primary" disabled={busy}>{busy?'Đang lưu…':'Nộp hồ sơ vào database'}</button></form>}
       </Panel>}
-      {session.user?.role==='hr'&&<Panel title="Vị trí tuyển dụng"><div className="space-y-2">{jobs.map(j=><p key={j.id} className="text-sm">{j.title} · {j.department} · {j.status==='active'?'Đang tuyển':'Đã đóng'}</p>)}</div><details className="mt-5"><summary className="cursor-pointer text-sm text-indigo-200">Tạo vị trí tuyển dụng</summary><form onSubmit={createJob} className="mt-4 space-y-4"><Field label="Tên vị trí"><input name="title" required maxLength={200} /></Field><Field label="Bộ phận"><input name="department" required maxLength={160} /></Field><Field label="Địa điểm"><input name="location" maxLength={200} /></Field><Field label="GPA tối thiểu (thang 4)"><input name="min_gpa" type="number" required min={0} max={4} step="0.01" defaultValue={3} /></Field><Field label="Mô tả công việc"><textarea name="description" maxLength={10000} rows={3} /></Field><button className="btn-primary" disabled={busy}>Tạo vị trí</button></form></details></Panel>}
-      {session.user&&<Panel title={session.user.role==='hr'?`Hồ sơ ứng viên (${applications.length})`:`Hồ sơ của tôi (${applications.length})`}><p className="mb-4 text-xs text-slate-500">Hiển thị tối đa 200 hồ sơ mới nhất được phép đọc.</p><div className="space-y-4">{applications.map(a=><article key={a.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="font-semibold text-indigo-200">{a.full_name}</h2><p className="mt-1 text-sm">{jobs.find(j=>j.id===a.job_id)?.title ?? 'Vị trí đã đóng'}</p></div><span className="text-xs text-emerald-200">{stageLabel[a.stage]??a.stage} · {statusLabel[a.status]??a.status}</span></div><p className="mt-3 break-words text-xs text-slate-400">{a.contact_email} · {a.major} · GPA {a.gpa}/{a.gpa_scale}</p><details className="mt-3 text-sm"><summary className="cursor-pointer text-indigo-200">Xem chi tiết hồ sơ</summary><div className="mt-3 space-y-2 break-words text-slate-400"><p>Mã hồ sơ: {a.id}</p><p>Nộp lúc: {new Date(a.created_at).toLocaleString('vi-VN')}</p><p>Điện thoại: {a.phone||'Chưa cung cấp'}</p><p>Năm tốt nghiệp: {a.graduation_year}</p><p>Số dự án: {a.project_count??'Chưa cung cấp'} · Kinh nghiệm: {a.experience_months??'Chưa cung cấp'} tháng</p><p>Kỹ năng: {a.skills.join(', ')||'Chưa cung cấp'}</p><p className="whitespace-pre-wrap">Dự án: {a.project_description||'Chưa cung cấp'}</p></div></details><ApplicationFiles application={a} canUpload={session.user!.role==='candidate'} /></article>)}{!applications.length&&<p className="py-4 text-sm text-slate-400">Chưa có hồ sơ. {session.user.role==='hr'?'Ứng viên nộp hồ sơ sẽ xuất hiện tại đây.':'Chọn vị trí và nộp hồ sơ ở trên.'}</p>}</div></Panel>}
+      {session.user?.role==='hr'&&<RoundOnePortal jobs={jobs} local={session.mode==='local'} onChanged={reloadBusiness} />}
+      {session.user?.role==='hr'&&<Panel title="Vị trí tuyển dụng"><div className="space-y-2">{jobs.map(j=><p key={j.id} className="text-sm">{j.title} · {j.department} · {j.status==='active'?'Đang tuyển':'Đã đóng'}</p>)}</div><details className="mt-5"><summary className="cursor-pointer text-sm text-indigo-200">Tạo vị trí tuyển dụng</summary><form onSubmit={createJob} className="mt-4 space-y-4"><Field label="Tên vị trí"><input name="title" required maxLength={200} /></Field><Field label="Bộ phận"><input name="department" required maxLength={160} /></Field><Field label="Địa điểm"><input name="location" maxLength={200} /></Field><Field label="Kỹ năng yêu cầu (ngăn cách bằng dấu phẩy)"><input name="requirements" maxLength={2400} placeholder="Python, SQL" /></Field><Field label="GPA tối thiểu (thang 4)"><input name="min_gpa" type="number" required min={0} max={4} step="0.01" defaultValue={3} /></Field><Field label="Mô tả công việc"><textarea name="description" maxLength={10000} rows={3} /></Field><button className="btn-primary" disabled={busy}>Tạo vị trí</button></form></details></Panel>}
+      {session.user&&<Panel title={session.user.role==='hr'?`Hồ sơ ứng viên (${applications.length})`:`Hồ sơ của tôi (${applications.length})`}><p className="mb-4 text-xs text-slate-500">Hiển thị tối đa 200 hồ sơ mới nhất được phép đọc.</p><div className="space-y-4">{applications.map(a=><article key={a.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="font-semibold text-indigo-200">{a.full_name}</h2><p className="mt-1 text-sm">{jobs.find(j=>j.id===a.job_id)?.title ?? 'Vị trí đã đóng'}</p></div><span className="text-xs text-emerald-200">{stageLabel[a.stage]??a.stage} · {statusLabel[a.status]??a.status}</span></div><p className="mt-3 break-words text-xs text-slate-400">{a.contact_email} · {a.major} · GPA {a.gpa}/{a.gpa_scale}</p><details className="mt-3 text-sm"><summary className="cursor-pointer text-indigo-200">Xem chi tiết hồ sơ</summary><div className="mt-3 space-y-2 break-words text-slate-400"><p>Mã hồ sơ: {a.id}</p><p>Nộp lúc: {new Date(a.created_at).toLocaleString('vi-VN')}</p><p>Điện thoại: {a.phone||'Chưa cung cấp'}</p><p>Năm tốt nghiệp: {a.graduation_year}</p><p>Số dự án: {a.project_count??'Chưa cung cấp'} · Kinh nghiệm: {a.experience_months??'Chưa cung cấp'} tháng</p><p>Kỹ năng: {a.skills.join(', ')||'Chưa cung cấp'}</p><p className="whitespace-pre-wrap">Dự án: {a.project_description||'Chưa cung cấp'}</p></div></details>{invitations.some(i=>i.application_id===a.id)&&<p className="mt-4 rounded-lg border border-indigo-900 bg-indigo-950/30 p-3 text-sm text-indigo-200">Đã được HR chọn vào vòng 2 · {new Date(invitations.find(i=>i.application_id===a.id)!.invited_at).toLocaleString('vi-VN')}. Lịch phỏng vấn sẽ do HR thông báo; chưa có email tự động.</p>}<ApplicationFiles application={a} canUpload={session.user!.role==='candidate'} /></article>)}{!applications.length&&<p className="py-4 text-sm text-slate-400">Chưa có hồ sơ. {session.user.role==='hr'?'Ứng viên nộp hồ sơ sẽ xuất hiện tại đây.':'Chọn vị trí và nộp hồ sơ ở trên.'}</p>}</div></Panel>}
     </>}
   </div></main>;
 }
