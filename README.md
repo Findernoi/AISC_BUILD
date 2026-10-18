@@ -211,7 +211,7 @@ Open the local URL shown by Vite and the Express server and test the Supabase co
 
 Cổng ứng tuyển tự đọc tệp mới sau upload: PDF có lớp chữ dùng PDF.js; ảnh/PDF scan dùng Tesseract Anh/Việt ngay trên server. Không gửi tài liệu ra dịch vụ OCR/AI bên ngoài. Với chứng chỉ/thành tích, ứng viên khai thông tin để đối chiếu tại form thêm tệp. Họ tên lấy từ hồ sơ, không cho khai đè qua header.
 
-Mở **CV và minh chứng → Kết quả đọc và đối chiếu tự động** để xem từng trường khai báo/đọc được và căn cứ theo trang. Kết quả chỉ là khớp/sai lệch/chưa rõ/không đọc được; chưa xác minh từ đơn vị cấp, không tự cộng điểm hoặc loại ứng viên. HR vẫn cần xử lý trường hợp chưa rõ và xác minh tính thật khi cần.
+Mở **CV và minh chứng → Kết quả đọc và đối chiếu tự động** để xem từng trường khai báo/đọc được và căn cứ theo trang. Minh chứng ngoại ngữ/thành tích khớp đầy đủ tự được tính điểm theo công thức; chỉ sai lệch, thiếu, chưa rõ hoặc chưa đọc được mới vào **Ngoại lệ minh chứng · HR**. HR xem bản gốc và OCR, ghi lý do chấp nhận/từ chối phần điểm; không cần xác minh mọi tệp. “Khớp thông tin tự động” không khẳng định tài liệu thật từ đơn vị cấp và không tự loại ứng viên. Kết quả cũ cần đọc lại theo engine v2; thành tích phải đối chiếu cả cấp giải thưởng.
 
 Chạy local vẫn bằng `npm run dev:recruitment`; dữ liệu OCR và kết quả nằm trên máy. Cloud cần migration thứ tư `202610180004_evidence_checks.sql`; chưa tự áp dụng. Xem [phạm vi và giới hạn](backend/database/README.md#doc-va-doi-chieu-tu-dong).
 

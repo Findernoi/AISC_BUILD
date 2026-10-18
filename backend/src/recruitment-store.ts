@@ -5,9 +5,13 @@ import type { EvidenceCheck, CheckRegistration } from '../../shared/recruitment'
 import type { RoundOneScope,RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
 import type { RoundTwoReport,RoundTwoMutation } from '../../shared/recruitment';
 import type { HiringReport,HiringWeights,HiringDecisionInput,HiringDecision } from '../../shared/recruitment';
+import type { EvidenceAssessment,EvidenceExceptionReport,EvidenceResolutionInput } from '../../shared/recruitment';
 
 export interface RecruitmentStore {
   user: RecruitmentUser | null;
+  evidenceAssessment(id:string):Promise<EvidenceAssessment|null>;
+  evidenceExceptions():Promise<EvidenceExceptionReport>;
+  resolveEvidence(id:string,input:EvidenceResolutionInput):Promise<void>;
   hiringReport(id:string,weights:HiringWeights):Promise<HiringReport|null>;
   decide(id:string,input:HiringDecisionInput):Promise<HiringDecision>;
   roundTwo(id:string):Promise<RoundTwoReport|null>;
@@ -26,7 +30,7 @@ export interface RecruitmentStore {
   apply(input: ApplicationInput): Promise<RecruitmentApplication>;
   createJob(input: {title:string;department:string;description:string;location:string;min_gpa:number;requirements?:string[]}): Promise<RecruitmentJob>;
 }
-// Select explicit fields: internal evaluations/decisions never enter this API.
+// Application lists exclude evaluations/decisions; separate HR endpoints handle those.
 export const JOB_COLUMNS = 'id,title,department,description,location,requirements,min_gpa,status';
 export const APPLICATION_COLUMNS = 'id,job_id,applicant_id,full_name,contact_email,phone,major,gpa,gpa_scale,graduation_year,project_count,experience_months,skills,project_description,stage,status,created_at,revision';
 
@@ -48,6 +52,9 @@ export async function supabaseStore(token: string | undefined): Promise<Recruitm
   }
   return {
     user,
+    async evidenceAssessment(id){const r=await client.rpc('evidence_assessment',{target:id});if(r.error)throw r.error;return r.data as EvidenceAssessment|null;},
+    async evidenceExceptions(){const r=await client.rpc('evidence_exceptions');if(r.error)throw r.error;return r.data as EvidenceExceptionReport;},
+    async resolveEvidence(id,input){const r=await client.rpc('resolve_evidence_exception',{target:id,expected_basis:input.expectedBasis,outcome:input.outcome,explanation:input.reason});if(r.error)throw r.error;},
     async hiringReport(id,weights){const r=await client.rpc('hiring_report',{target:id,weights});if(r.error)throw r.error;return r.data as HiringReport|null;},
     async decide(id,input){const r=await client.rpc('save_hiring_decision',{target:id,expected_basis:input.expectedBasis,weights:input.weights,outcome:input.result,explanation:input.reason});if(r.error)throw r.error;return r.data as HiringDecision;},
     async roundTwo(id){const r=await client.rpc('read_round_two',{target:id});if(r.error)throw r.error;return r.data as RoundTwoReport|null;},

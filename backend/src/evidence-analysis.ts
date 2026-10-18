@@ -4,7 +4,7 @@ import { ApiError } from './recruitment-validation';
 import { digest, readEvidence, type FileStorage } from './recruitment-files';
 import type { RecruitmentStore } from './recruitment-store';
 
-export const EVIDENCE_ENGINE='local-ocr-rules-v1';
+export const EVIDENCE_ENGINE='local-ocr-rules-v2';
 export function validateDeclaration(value:unknown):EvidenceDeclaration {
   if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(400,'Thông tin minh chứng không hợp lệ.');
   const d=value as Record<string,unknown>;
@@ -40,9 +40,11 @@ const patterns:Record<string,RegExp>={
   reference:/^(?:trf(?: number)?|certificate(?: number| id)?|reference|ma chung chi)\s*[:：]\s*([a-z0-9-]+)\s*$/i,
   title:/^(?:achievement|award|thanh tich|giai thuong)\s*[:：]\s*(.+)$/i,
   issuer:/^(?:issuer|issued by|don vi cap)\s*[:：]\s*(.+)$/i,
+  level:/^(?:level|award level|cap|cap thanh tich|cap giai thuong)\s*[:：]\s*(.+)$/i,
 };
-const fieldLabels:Record<string,string>={full_name:'Họ và tên',credential:'Loại chứng chỉ',score:'Điểm',issued_on:'Ngày cấp',reference:'Mã chứng chỉ',title:'Thành tích',issuer:'Đơn vị cấp'};
+const fieldLabels:Record<string,string>={full_name:'Họ và tên',credential:'Loại chứng chỉ',score:'Điểm',issued_on:'Ngày cấp',reference:'Mã chứng chỉ',title:'Thành tích',issuer:'Đơn vị cấp',level:'Cấp thành tích'};
 function comparable(key:string,value:string) {
+  if(key==='level'){const v=normalized(value);return ({school:'school','cap truong':'school',truong:'school',national:'national','cap quoc gia':'national','quoc gia':'national',international:'international','cap quoc te':'international','quoc te':'international'} as Record<string,string>)[v]??v;}
   if(key==='score')return String(Number(value.replace(',','.')));
   if(key==='reference')return normalized(value).replace(/ /g,'');
   if(key==='issued_on') {const m=value.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:value;}
@@ -50,7 +52,7 @@ function comparable(key:string,value:string) {
 }
 export function compareEvidence(app:RecruitmentApplication,file:RecruitmentFile,pages:EvidencePage[],partial=false):EvidenceResult {
   const declared:Record<string,string>={...validateDeclaration(file.declared_fields??{}),full_name:app.full_name};
-  const keys=['full_name',...(file.kind==='english'?['credential','score']:file.kind==='achievement'?['title','issuer']:[])];
+  const keys=['full_name',...(file.kind==='english'?['credential','score']:file.kind==='achievement'?['title','issuer','level']:[])];
   for(const key of ['issued_on','reference'])if(declared[key])keys.push(key);
   const fields:EvidenceField[]=keys.map(key=>{
     const expected=declared[key]??'';
@@ -64,13 +66,12 @@ export function compareEvidence(app:RecruitmentApplication,file:RecruitmentFile,
     const unique=[...new Set(found.map(f=>comparable(key,f.value)))];
     const candidate=found[0];
     const reliable=Boolean(candidate&&(candidate.page.confidence===null||candidate.page.confidence>=85));
-    const outcome=!expected||!candidate||unique.length!==1||!reliable?'unclear':unique[0]===comparable(key,expected)?'match':'mismatch';
+    const outcome=!expected||!comparable(key,expected)||!candidate||unique.length!==1||!unique[0]||!reliable?'unclear':unique[0]===comparable(key,expected)?'match':'mismatch';
     return {key,label:fieldLabels[key],declared:expected,extracted:candidate?.value??null,outcome,page:candidate?.page.page??null,excerpt:candidate?.excerpt??''};
   });
   const readable=pages.some(p=>p.text.replace(/\s/g,'').length>=15);
   const status=!readable?'unreadable':fields.some(f=>f.outcome==='mismatch')?'mismatch':partial||fields.some(f=>f.outcome==='unclear')?'unclear':'matched';
-  const notes=['Đối chiếu nội dung, chưa xác minh từ đơn vị cấp. Không tự cộng điểm hoặc loại ứng viên.'];
-  if(file.declared_fields?.level)notes.push('Cấp thành tích là tự khai; OCR không xác minh cấp giải thưởng hoặc tính thật của tài liệu.');
+  const notes=['Đối chiếu thông tin tự động, không xác nhận tính thật từ đơn vị cấp. Minh chứng ngoại ngữ/thành tích khớp đầy đủ và còn hiệu lực sẽ được tính điểm theo công thức; ngoại lệ cần HR xử lý. Không tự loại ứng viên.'];
   if(partial)notes.push('Chỉ đọc tối đa 5 trang; cần HR kiểm tra phần còn lại.');
   if(fields.some(f=>f.outcome==='unclear'))notes.push('Thiếu khai báo, không thấy nhãn thông tin rõ ràng, có nhiều giá trị hoặc OCR chưa đủ rõ; cần HR đối chiếu.');
   return {status,issuer_verified:false,fields,pages,partial,notes,engine:EVIDENCE_ENGINE};
@@ -97,7 +98,7 @@ export async function checkEvidence(store:RecruitmentStore,storage:FileStorage,i
   try {
     const read=await extract(bytes,file.mime_type);
     const result=compareEvidence(app,file,read.pages,read.partial);
-    const check=await store.saveCheck({file_id:id,application_id:app.id,file_sha256:file.sha256,claims_hash:hash,created_by:store.user!.id,result});
+    const check=await store.saveCheck({file_id:id,application_id:app.id,file_sha256:file.sha256,claims_hash:hash,claims_snapshot:{full_name:app.full_name,declaration:file.declared_fields??{}},created_by:store.user!.id,result});
     const current=await store.application(app.id);
     return {...check,stale:!current||claimsHash(current,file)!==hash};
   }finally{processing=false;}

@@ -79,6 +79,20 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
     res.json({invitations:await db.invitations()});
   }));
+  router.get('/evidence-exceptions',handle(async(req,res)=>{
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được xem ngoại lệ minh chứng.');
+    res.json({report:await db.evidenceExceptions()});
+  }));
+  router.post('/files/:id/resolve-exception',handle(async(req,res)=>{
+    if(!isUuid(req.params.id))throw new ApiError(400,'Mã tệp không hợp lệ.');
+    const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
+    if(db.user.role!=='hr')throw new ApiError(403,'Chỉ HR được xử lý ngoại lệ.');
+    const b=req.body;
+    if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(b).some(k=>!['expectedBasis','outcome','reason'].includes(k))||typeof b.expectedBasis!=='string'||!/^[a-f0-9]{32}$/.test(b.expectedBasis)||!['accept','reject'].includes(b.outcome)||typeof b.reason!=='string'||!b.reason.trim()||b.reason.length>5000)throw new ApiError(400,'Chọn kết luận, nhập lý do tối đa 5.000 ký tự và dùng căn cứ hiện tại.');
+    if(!await db.file(req.params.id))throw new ApiError(404,'Không tìm thấy tệp.');
+    await db.resolveEvidence(req.params.id,{expectedBasis:b.expectedBasis,outcome:b.outcome,reason:b.reason.trim()});res.json({ok:true});
+  }));
   router.get('/applications/:id/hiring',handle(async(req,res)=>{
     if(!isUuid(req.params.id))throw new ApiError(400,'Mã hồ sơ không hợp lệ.');
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
@@ -193,13 +207,14 @@ export function createRecruitmentRouter(options: {local:boolean; database?:()=>P
     const file=await db.file(req.params.id);if(!file)throw new ApiError(404,'Không tìm thấy tệp.');
     const app=await db.application(file.application_id);if(!app)throw new ApiError(404,'Không tìm thấy hồ sơ.');
     const check=await db.check(file.id);
-    res.json({check:check?{...check,stale:check.claims_hash!==claimsHash(app,file)||check.file_sha256!==file.sha256}:null});
+    res.json({check:check?{...check,stale:check.claims_hash!==claimsHash(app,file)||check.file_sha256!==file.sha256}:null,assessment:await db.evidenceAssessment(file.id)});
   }));
   router.post('/files/:id/check',handle(async(req,res)=>{
     if(!isUuid(req.params.id))throw new ApiError(400,'Mã tệp không hợp lệ.');
     if(req.body&&(Object.keys(req.body).some(k=>k!=='force')||(req.body.force!==undefined&&typeof req.body.force!=='boolean')))throw new ApiError(400,'Chỉ được yêu cầu đọc lại; không được gửi kết quả đối chiếu.');
     const db=await store(req);if(!db.user)throw new ApiError(401,'Hãy đăng nhập trước.');
-    res.json({check:await checkEvidence(db,fileStorage(),req.params.id,options.extract,req.body?.force===true)});
+    const check=await checkEvidence(db,fileStorage(),req.params.id,options.extract,req.body?.force===true);
+    res.json({check,assessment:await db.evidenceAssessment(req.params.id)});
   }));
   const bodyError:ErrorRequestHandler=(error,_req,res,next)=>{
     if(error.type==='entity.too.large'){res.status(413).json({error:'Mỗi tệp tối đa 10 MiB.'});return;}

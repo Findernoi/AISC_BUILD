@@ -2,7 +2,16 @@
 
 Cập nhật ngày 18/10/2026. Đọc file này trước khi tiếp tục công việc trong chat mới, sau đó kiểm tra mã nguồn và `git status` để xác nhận trạng thái thực tế. Đây là bản bàn giao, không phải lệnh tự động triển khai hoặc push.
 
-## Bổ sung mới nhất: tổng hợp và quyết định (đã được duyệt push)
+## Quy tắc mới nhất: tự đối chiếu, HR chỉ xử lý ngoại lệ (đã được duyệt push)
+
+- Người dùng đã chốt bỏ bước HR xác minh mọi tệp: ngoại ngữ/thành tích khớp đầy đủ theo khai báo hiện tại tự được tính điểm; chỉ lệch/thiếu/không rõ/chưa đọc được mới chuyển HR. Quyết định nghiệp vụ này thay thế quy tắc bắt buộc review ở các mốc lịch sử bên dưới. Không gọi khớp OCR là xác thực tính thật từ đơn vị cấp.
+- Migration 8 `202610180008_evidence_exceptions.sql`, engine `local-ocr-rules-v2`. Kết quả cần snapshot tên/khai báo trùng hiện tại, đúng hash, engine mới, không partial và đủ tất cả trường khớp. Thành tích bắt buộc đối chiếu cả cấp (`level`) để tính 4/7/10 điểm. Kết quả v1 cần đọc lại, không tự nâng thành khớp v2.
+- UI `EvidenceExceptionsPortal.tsx`: chỉ tệp mới nhất từng loại ngoại ngữ/thành tích; xem tệp riêng tư cạnh khai báo và OCR, chấp nhận/từ chối phần điểm kèm lý do. Kết luận gắn căn cứ hiện tại, stale trả 409; không tự loại ứng viên. Review cũ đúng file/claims được giữ tương thích; `verified` trong bảng cũ hiển thị là HR chấp nhận ngoại lệ, không khẳng định xác thực nguồn cấp.
+- Check OCR mới tăng revision hồ sơ; điểm cập nhật, quyết định cũ cần duyệt lại khi căn cứ thay đổi. Thay tệp chỉ xét bản mới nhất; đọc lại tạo check mới làm kết luận ngoại lệ trước đó cần xem lại. CV không có điểm minh chứng và không vào hàng chờ này.
+- Mốc trước phần này: `63ad266bdd197afd818aa8a648972a64e70b4078` (tổng hợp/quyết định). Người dùng đã xem local và duyệt push phần tự đối chiếu/xử lý ngoại lệ trong commit chứa cập nhật này; kiểm tra `git log` và `git status` để xác nhận trạng thái thực tế. Không sửa cloud; các phần tiếp theo vẫn cần được duyệt push riêng.
+- Kiểm tra phần mới: 105/105 tests đạt, TypeScript/build đạt; cảnh báo bundle lớn vẫn có. Đã đọc hai PDF giả bằng bộ đọc thật trên hồ sơ thử A: IELTS 7.5 tự khớp và cộng 12.5 điểm, cấp thành tích School/national lệch vào HR. Đã thử HR từ chối phần điểm, trạng thái hồ sơ không đổi; sau restart tự khớp và kết luận HR vẫn còn. Đọc lại PDF thành tích để giữ một ngoại lệ mẫu đang mở cho người dùng xem. Ảnh ở `output/previews/evidence-exceptions-backend.png` (Git ignore).
+
+## Mốc tổng hợp và quyết định (đã push ở 63ad266)
 
 - Mốc vòng 2 là `1fe031603ea8e1ea011fe2c8839b05c3eaa3cea8` trên `main`. Người dùng đã xem local và đồng ý push phần tổng hợp/quyết định trong commit chứa cập nhật này; dùng `git log` và `git status` để xác nhận trạng thái thực tế. Quyền push này chỉ áp dụng phần đã duyệt.
 - Migration 7 `202610180007_hiring_decisions.sql`: API/RPC tổng hợp và lưu quyết định. HR chọn tỷ trọng số nguyên 0–100 tổng 100, mặc định vòng 1/bài test/phỏng vấn 30/30/40. Database tính đến hai chữ số thập phân (demo cũ làm tròn một chữ số); không dùng xác suất ML.
@@ -40,7 +49,7 @@ Cập nhật ngày 18/10/2026. Đọc file này trước khi tiếp tục công 
 - Người dùng muốn cân nhắc OTP sau khi hoàn thiện sản phẩm; chưa yêu cầu triển khai OTP. Đã có nhắc việc trong chat cũ; khi sản phẩm hoàn thiện hãy nhắc người dùng cân nhắc, tránh tạo nhắc trùng.
 - Không thêm trường số lần thực tập. Cột `Internships` chỉ giữ trong CSV gốc, không dùng làm đầu vào model/form.
 - Dataset đang dùng: Campus Recruitment CSV, giấy phép nguồn công bố CC0. Không tiếp tục kể lại chuyện dataset đã bỏ trong README.
-- OCR tự đọc và đối chiếu thông tin; kết quả khớp không đồng nghĩa xác minh tính thật của chứng chỉ/thành tích. Không tự cộng điểm hoặc loại ứng viên chỉ từ OCR.
+- OCR tự đối chiếu; khớp đầy đủ được tính điểm minh chứng, không đồng nghĩa xác minh tính thật và không tự loại ứng viên. HR chỉ xử lý ngoại lệ.
 - Điểm vòng 1 theo công thức công khai; xác suất placement không dùng làm điểm quyết định/top 10.
 - Làm việc và giải thích bằng tiếng Việt, rõ chức năng đã chạy thật và phần chỉ là demo.
 
@@ -86,13 +95,13 @@ Lúc bàn giao, server local đang chạy cổng 3000 và trình duyệt đang m
 
 - GPA tối đa 25; kỹ năng khớp từ khóa yêu cầu vị trí tối đa 30.
 - Dự án tối đa 15, kinh nghiệm tối đa 5, cả hai là thông tin tự khai.
-- Ngoại ngữ tối đa 15 và thành tích tối đa 10 chỉ khi có review xác minh gắn đúng tệp/hash/thông tin khai báo hiện tại.
+- Ngoại ngữ tối đa 15 và thành tích tối đa 10 khi tự đối chiếu khớp đầy đủ hoặc HR chấp nhận ngoại lệ, đúng tệp/hash/thông tin khai báo hiện tại.
 - GPA từ 3.6/4 cộng 3; tổng tối đa 100, làm tròn 1 chữ số thập phân.
 - GPA thang 10 quy về thang 4. Công thức chi tiết nằm ở migration 5 và hàm frontend cũ dùng để kiểm tra tính tương đương.
 - Xếp hạng cần tổng từ 75, GPA đạt mức vị trí, vị trí đang mở, email/ngành hợp lệ và hồ sơ còn ở giai đoạn phù hợp.
 - Điểm bằng nhau sắp theo UUID để kết quả ổn định. Top 10 theo bộ lọc đang chọn; không phải hạn mức 10 lời mời lịch sử vĩnh viễn.
-- Tệp ngoại ngữ/thành tích mới nhất được xét; không tự dùng lại điểm tệp cũ đã xác minh nếu tệp mới chưa được xác minh.
-- OCR khớp không tự tạo review xác minh. Review cũ thiếu claims_snapshot cần được xác minh lại trước khi được cộng điểm.
+- Tệp ngoại ngữ/thành tích mới nhất được xét; không dùng lại điểm tệp cũ nếu tệp mới chưa khớp hoặc chưa được HR chấp nhận ngoại lệ.
+- Tự đối chiếu khớp không tạo review thủ công. Review cũ thiếu claims_snapshot không đủ căn cứ cộng điểm; đọc lại hoặc HR xử lý ngoại lệ.
 - Báo cáo trả tối đa 200 dòng, nhưng tính/xếp hạng trên toàn bộ hồ sơ thuộc bộ lọc trước khi giới hạn hiển thị.
 - Có advisory lock cho các ghi liên quan tới vòng 1; chưa kiểm tra tải đồng thời nhiều kết nối production.
 

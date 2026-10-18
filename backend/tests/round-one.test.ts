@@ -53,7 +53,7 @@ test('only HR can rank/invite; raw invitation inserts and caller supplied scores
 test('HR explicitly selects current top ten; snapshot and stage update are atomic and repeat invitations preserve the original',async()=>{
   const before=await hr.roundOne(scope()),ids=before.rows.slice(0,2).map(r=>r.application.id);
   const invitations=await hr.invite(ids,scope());assert.equal(invitations.length,2);assert.equal(Number(invitations[0].round_one_score),78);
-  assert.equal(invitations[0].scope.applicationRevision,1);assert.equal(invitations[0].scope.version,'round-one-v1');
+  assert.equal(invitations[0].scope.applicationRevision,1);assert.equal(invitations[0].scope.version,'round-one-v2-evidence-exceptions');
   assert.equal((await hr.application(ids[0]))!.stage,'interview');assert.equal((await hr.application(ids[0]))!.status,'passed');
   const again=await hr.invite(ids,scope());assert.deepEqual(again,invitations);
   assert.equal((await hr.roundOne(scope())).rows.filter(r=>r.inTopTen).length,10);
@@ -67,13 +67,13 @@ test('stale ranking or invalid selection rolls back the entire batch, including 
   assert.equal((await hr.invitations()).length,0);assert.equal((await hr.application(good))!.stage,'applied');
   await assert.rejects(hr.invite([good,good],scope()),/unique/);
 });
-test('OCR matches alone never earn evidence points; manual verification is bound to the latest file and current name',async()=>{
+test('legacy incomplete OCR never earns automatic points; existing manual conclusions stay bound to file and claims',async()=>{
   const id=(await hr.roundOne(scope())).rows[0].application.id,application=(await hr.application(id))!;
   const file=await db.query<{id:string}>(`insert into public.application_files(application_id,uploaded_by,kind,object_path,original_name,mime_type,byte_size,sha256,declared_fields)
     values($1,$2,'english',$3,'certificate.pdf','application/pdf',100,$4,$5) returning id`,[id,application.applicant_id,`${application.applicant_id}/${id}/${randomUUID()}.pdf`,'a'.repeat(64),JSON.stringify({credential:'IELTS',score:'8'})]);
   await db.query('insert into public.evidence_checks(file_id,application_id,file_sha256,claims_hash,created_by,result) values($1,$2,$3,$4,$5,$6)',[file.rows[0].id,id,'a'.repeat(64),'b'.repeat(64),application.applicant_id,JSON.stringify({status:'matched',issuer_verified:false,fields:[{key:'full_name',declared:application.full_name}]})]);
   let row=(await hr.roundOne(scope())).rows.find(r=>r.application.id===id)!;assert.equal(row.score.contributions.find(c=>c.key==='english')!.value,0);
-  await withIdentity(db,'hr',tx=>tx.query("insert into public.evidence_reviews(file_id,application_id,file_sha256,status,reference) values($1,$2,$3,'verified','Manual test source')",[file.rows[0].id,id,'a'.repeat(64)]));
+  await db.query("insert into public.evidence_reviews(file_id,application_id,file_sha256,status,reference,reviewed_by) values($1,$2,$3,'verified','Manual test source',$4)",[file.rows[0].id,id,'a'.repeat(64),hr.user!.id]);
   row=(await hr.roundOne(scope())).rows.find(r=>r.application.id===id)!;assert.ok(Number(row.score.contributions.find(c=>c.key==='english')!.value)>0);
   await db.query('update public.applications set full_name=$1 where id=$2',['Changed name',id]);
   row=(await hr.roundOne(scope())).rows.find(r=>r.application.id===id)!;assert.equal(row.score.contributions.find(c=>c.key==='english')!.value,0);assert.ok(row.score.evidenceAlerts>0);
@@ -83,7 +83,7 @@ test('OCR matches alone never earn evidence points; manual verification is bound
   row=(await hr.roundOne(scope())).rows.find(r=>r.application.id===id)!;assert.equal(row.score.contributions.find(c=>c.key==='english')!.value,0);
   const achievement=await db.query<{id:string}>(`insert into public.application_files(application_id,uploaded_by,kind,object_path,original_name,mime_type,byte_size,sha256,declared_fields)
     values($1,$2,'achievement',$3,'award.pdf','application/pdf',100,$4,$5) returning id`,[id,application.applicant_id,`${application.applicant_id}/${id}/${randomUUID()}.pdf`,'d'.repeat(64),JSON.stringify({title:'Test award',issuer:'Test source',level:'international'})]);
-  for(const [proofId,hash] of [[latest.rows[0].id,'c'.repeat(64)],[achievement.rows[0].id,'d'.repeat(64)]])await withIdentity(db,'hr',tx=>tx.query("insert into public.evidence_reviews(file_id,application_id,file_sha256,status,reference) values($1,$2,$3,'verified','Explicit manual test verification')",[proofId,id,hash]));
+  for(const [proofId,hash] of [[latest.rows[0].id,'c'.repeat(64)],[achievement.rows[0].id,'d'.repeat(64)]])await db.query("insert into public.evidence_reviews(file_id,application_id,file_sha256,status,reference,reviewed_by) values($1,$2,$3,'verified','Existing manual fixture',$4)",[proofId,id,hash,hr.user!.id]);
   row=(await hr.roundOne(scope())).rows.find(r=>r.application.id===id)!;assert.equal(row.score.contributions.find(c=>c.key==='achievement')!.value,10);assert.equal(row.score.total,100);
 });
 test('ranking computes over the entire pool instead of only the newest 200 applications',async()=>{

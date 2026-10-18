@@ -28,7 +28,11 @@ export interface EvidenceResult {
   status:'matched'|'mismatch'|'unclear'|'unreadable'; issuer_verified:false; fields:EvidenceField[]; pages:EvidencePage[];
   notes:string[]; engine:string; partial:boolean;
 }
-export interface EvidenceCheck { id:string; file_id:string; application_id:string; file_sha256:string; claims_hash:string; created_by:string; created_at:string; result:EvidenceResult; stale?:boolean; }
+export interface EvidenceCheck { id:string; file_id:string; application_id:string; file_sha256:string; claims_hash:string; claims_snapshot?:{full_name:string;declaration:EvidenceDeclaration}; created_by:string; created_at:string; result:EvidenceResult; stale?:boolean; }
+export interface EvidenceAssessment {status:'automatic'|'exception'|'accepted'|'rejected'|'obsolete'|'not_scored';basis:string;checkId:string|null;reason:string;}
+export interface EvidenceExceptionRow {file:RecruitmentFile;application:{id:string;full_name:string;major:string};assessment:EvidenceAssessment;}
+export interface EvidenceExceptionReport {total:number;rows:EvidenceExceptionRow[];}
+export interface EvidenceResolutionInput {expectedBasis:string;outcome:'accept'|'reject';reason:string;}
 export type CheckRegistration=Omit<EvidenceCheck,'id'|'created_at'|'stale'>;
 export type FileRegistration = Omit<RecruitmentFile,'id'|'bucket'|'created_at'>;
 export interface RoundOneScope { jobId:string|null; major:'all'|'AI'|'KHMT'|'KTPM'; }

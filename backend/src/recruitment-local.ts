@@ -8,11 +8,12 @@ import type { RecruitmentApplication, RecruitmentJob, RecruitmentFile, EvidenceC
 import type { RoundOneReport,InterviewInvitation } from '../../shared/recruitment';
 import type { RoundTwoReport } from '../../shared/recruitment';
 import type { HiringReport,HiringDecision } from '../../shared/recruitment';
+import type {EvidenceAssessment,EvidenceExceptionReport} from '../../shared/recruitment';
 
 export const roleMigrationUrl=new URL('../database/migrations/202610180002_recruitment_role.sql',import.meta.url);
 export async function initializeLocalRecruitment(db: PGlite) {
   const exists=await db.query<{relation:string|null}>(`select to_regclass('public.applications')::text as relation`);
-  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);return;}
+  if (exists.rows[0].relation) {await ensureEvidenceMigration(db);await ensureRoundOneMigration(db);await ensureRoundTwoMigration(db);await ensureHiringMigration(db);await ensureExceptionsMigration(db);return;}
   // Local-only bootstrap. Never run this harness against Supabase.
   const source=(await readFile(migrationUrl,'utf8'))+'\n'+(await readFile(roleMigrationUrl,'utf8'));
   await db.transaction(async tx=>{
@@ -34,6 +35,11 @@ export async function initializeLocalRecruitment(db: PGlite) {
   await ensureRoundOneMigration(db);
   await ensureRoundTwoMigration(db);
   await ensureHiringMigration(db);
+  await ensureExceptionsMigration(db);
+}
+async function ensureExceptionsMigration(db:PGlite) {
+  const found=await db.query<{fn:string|null}>("select to_regprocedure('public.evidence_exceptions()')::text as fn");
+  if(!found.rows[0].fn)await db.exec(await readFile(new URL('../database/migrations/202610180008_evidence_exceptions.sql',import.meta.url),'utf8'));
 }
 async function ensureHiringMigration(db:PGlite) {
   const found=await db.query<{fn:string|null}>("select to_regprocedure('public.save_hiring_decision(uuid,text,jsonb,text,text)')::text as fn");
@@ -71,6 +77,9 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     return {id:PREVIEW_IDENTITIES[identity].userId!,email:`${identity}-local-preview@gm.uit.edu.vn`,role:r.rows[0].role};
   });
   return {user,
+    evidenceAssessment:id=>withIdentity(db,identity,async tx=>(await tx.query<{result:EvidenceAssessment|null}>('select public.evidence_assessment($1::uuid) as result',[id])).rows[0].result),
+    evidenceExceptions:()=>withIdentity(db,identity,async tx=>(await tx.query<{report:EvidenceExceptionReport}>('select public.evidence_exceptions() as report')).rows[0].report),
+    resolveEvidence:(id,input)=>withIdentity(db,identity,async tx=>{await tx.query('select public.resolve_evidence_exception($1::uuid,$2,$3,$4)',[id,input.expectedBasis,input.outcome,input.reason]);}),
     hiringReport:(id,weights)=>withIdentity(db,identity,async tx=>(await tx.query<{report:HiringReport|null}>('select public.hiring_report($1::uuid,$2::jsonb) as report',[id,JSON.stringify(weights)])).rows[0].report),
     decide:(id,input)=>withIdentity(db,identity,async tx=>(await tx.query<{decision:HiringDecision}>('select public.save_hiring_decision($1::uuid,$2,$3::jsonb,$4,$5) as decision',[id,input.expectedBasis,JSON.stringify(input.weights),input.result,input.reason])).rows[0].decision),
     roundTwo:id=>withIdentity(db,identity,async tx=>(await tx.query<{report:RoundTwoReport|null}>('select public.read_round_two($1::uuid) as report',[id])).rows[0].report),
@@ -80,8 +89,8 @@ export async function localStore(identity: PreviewIdentity, db: PGlite): Promise
     invitations:()=>withIdentity(db,identity,async tx=>(await tx.query<InterviewInvitation>('select application_id,invited_by,invited_at,round_one_score,scope from public.interview_invitations order by invited_at desc limit 200')).rows),
     check:id=>withIdentity(db,identity,async tx=>(await tx.query<EvidenceCheck>('select * from public.evidence_checks where file_id=$1 order by created_at desc,id desc limit 1',[id])).rows[0]??null),
     saveCheck:async input=>{
-      // Privileged insert only for server-produced, advisory extraction; caller already authorized the file through RLS.
-      return (await db.query<EvidenceCheck>('insert into public.evidence_checks(file_id,application_id,file_sha256,claims_hash,created_by,result) values($1,$2,$3,$4,$5,$6) returning *',[input.file_id,input.application_id,input.file_sha256,input.claims_hash,input.created_by,JSON.stringify(input.result)])).rows[0];
+      // Server-produced extraction only; caller already authorized the file through RLS.
+      return (await db.query<EvidenceCheck>('insert into public.evidence_checks(file_id,application_id,file_sha256,claims_hash,claims_snapshot,created_by,result) values($1,$2,$3,$4,$5,$6,$7) returning *',[input.file_id,input.application_id,input.file_sha256,input.claims_hash,input.claims_snapshot?JSON.stringify(input.claims_snapshot):null,input.created_by,JSON.stringify(input.result)])).rows[0];
     },
     application:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentApplication>(`select ${APPLICATION_COLUMNS} from public.applications where id=$1`,[id])).rows[0]??null),
     files:id=>withIdentity(db,identity,async tx=>(await tx.query<RecruitmentFile>('select * from public.application_files where application_id=$1 order by created_at desc,id limit 200',[id])).rows),

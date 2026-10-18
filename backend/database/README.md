@@ -1,5 +1,16 @@
 # Database tuyển dụng giai đoạn 1
 
+## Quy tắc minh chứng hiện tại: HR chỉ xử lý ngoại lệ (migration 8)
+
+Quy tắc này thay thế yêu cầu review thủ công bắt buộc được mô tả ở các mốc cũ bên dưới. Áp dụng `202610180008_evidence_exceptions.sql` sau migration 7; local tự áp dụng, chưa thay đổi cloud. Engine `local-ocr-rules-v2`: đủ trường khớp, đúng snapshot tên/khai báo và hash hiện tại, không đọc thiếu trang → tự tính điểm ngoại ngữ/thành tích, không cần HR duyệt. Thành tích cần cả tên, đơn vị cấp và cấp (`school|national|international`); hỗ trợ nhãn `Level`/`Cấp` rõ ràng. Điểm tối đa và công thức giữ nguyên. Nhãn “Khớp thông tin tự động” không xác nhận tính thật từ đơn vị cấp.
+
+- `GET /api/recruitment/evidence-exceptions`: HR-only, trả `{report:{total,rows}}` các tệp mới nhất từng loại ngoại ngữ/thành tích còn ngoại lệ. Đếm toàn bộ, hiển thị 200 tệp cũ nhất. Tệp khớp/đã xử lý/tệp cũ/CV không vào hàng chờ.
+- `GET/POST /api/recruitment/files/:id/check` trả thêm `assessment` bên cạnh `check`; chủ hồ sơ và HR được đọc, B không đọc tệp A. Trạng thái `automatic|exception|accepted|rejected|obsolete|not_scored` là trạng thái tính điểm riêng với status OCR. Kết quả v1 thiếu snapshot không tự được nâng lên v2, cần đọc lại; hết thời gian OCR/thiếu kết quả vẫn ở hàng chờ và HR có thể đọc lại hoặc xử lý bản gốc.
+- `POST /api/recruitment/files/:id/resolve-exception`: HR gửi `{expectedBasis,outcome:'accept'|'reject',reason}`. Kết luận gắn đúng tệp/hash/khai báo/check hiện tại; thiếu lý do, forged actor/score bị từ chối; stale/tệp cũ/không còn ngoại lệ trả 409. Không chấp nhận tác động phần điểm minh chứng, không tự rejected hồ sơ. Raw insert/update `evidence_reviews` qua authenticated bị thu hồi; actor lấy từ phiên HR.
+- Review lịch sử còn đúng file/claims giữ tương thích. Cột trạng thái cũ `verified` được dùng nội bộ cho kết luận chấp nhận; UI không mô tả là xác thực nguồn cấp. Check mới làm kết luận ngoại lệ cũ cần xem lại; không ghi đè hay reset dữ liệu ứng viên. Bảng review lưu kết luận hiện tại, audit lưu người/thời điểm/trường thay đổi.
+- Điểm dùng tệp mới nhất, check được ghi từ server; claims_snapshot được chụp trước khi OCR để không gắn kết quả cũ vào tên mới khi xử lý đang chạy. Ghi check dùng advisory lock và tăng revision; thay đổi điểm/căn cứ làm quyết định cũ cần duyệt lại. Công thức vòng 1 mang version `round-one-v2-evidence-exceptions`; không sửa điểm snapshot/lịch sử cũ.
+
+
 Migration: `migrations/202610180001_recruitment.sql`. Thiết kế cho **một tổ chức tuyển dụng**, PostgreSQL 15+ và Supabase Auth. Chưa hỗ trợ nhiều doanh nghiệp/tenant; không dùng chung schema này cho nhiều tổ chức nếu chưa bổ sung tenant isolation.
 
 ## Xem và kiểm tra local
