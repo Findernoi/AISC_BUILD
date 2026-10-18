@@ -4,7 +4,7 @@ Mã Express hiện có nằm trong `src/server.ts`. Chạy từ thư mục gốc
 
 ## Database giai đoạn 1
 
-Đã có [schema, migration và hướng dẫn](database/README.md) cho 12 bảng nghiệp vụ, kho vai trò HR riêng và Supabase Auth. Migration đã được chạy/kiểm thử trên PostgreSQL cục bộ qua PGlite, chưa áp dụng cloud. Ứng dụng chính vẫn lưu dữ liệu trên trình duyệt.
+Đã có [schema, migration và hướng dẫn](database/README.md), kho vai trò HR riêng và Supabase Auth. Tám migration đã được kiểm thử qua PostgreSQL/PGlite, chưa áp dụng cloud. Cổng `/?view=applications` đã dùng database từ nộp hồ sơ đến quyết định; demo ở trang gốc và dự báo vẫn dùng dữ liệu trình duyệt.
 
 ```powershell
 npm run test:database
@@ -20,11 +20,11 @@ Mở `http://127.0.0.1:3000/?view=database` rồi vào demo để xem bảng, c�
 - `GET /api/auth/me`: kiểm tra Bearer token qua Supabase.
 - `POST /api/ai/screen-resume`: sàng lọc thử nghiệm qua Gemini hoặc công thức fallback.
 
-Đây là server thử nghiệm được giữ lại từ bản frontend. Dữ liệu tuyển dụng của giao diện vẫn nằm trên trình duyệt; các API chưa thay thế luồng tuyển dụng demo.
+Các endpoint trên được giữ từ bản demo. Luồng tuyển dụng mới dùng `/api/recruitment` bên dưới, không gọi API sàng lọc Gemini để tính điểm vòng 1 hay quyết định.
 
 ## Khi phát triển backend
 
-Tách routes, controllers, services và repositories trong `src/` khi triển khai từng chức năng. Định nghĩa request/response dùng chung tại `shared/`, bổ sung database migrations và kiểm tra quyền truy cập cho ứng viên/HR. Giữ API dưới `/api` để frontend có thể gọi cùng origin.
+Routes ở `recruitment-api.ts`, hợp đồng ở `shared/recruitment.ts`, stores ở `recruitment-store.ts`/`recruitment-local.ts`. Giữ API cùng origin, kiểm tra đầu vào ở server và quyền tại RLS/RPC. Không thay JWT người gọi bằng service-role để né quyền.
 
 `.env` đặt ở gốc. Gemini API key và Supabase service role key chỉ dùng phía server. Khi production, build frontend trước rồi chạy `npm start` với `NODE_ENV=production`.
 

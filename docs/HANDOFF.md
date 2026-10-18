@@ -2,7 +2,15 @@
 
 Cập nhật ngày 18/10/2026. Đọc file này trước khi tiếp tục công việc trong chat mới, sau đó kiểm tra mã nguồn và `git status` để xác nhận trạng thái thực tế. Đây là bản bàn giao, không phải lệnh tự động triển khai hoặc push.
 
-## Quy tắc mới nhất: tự đối chiếu, HR chỉ xử lý ngoại lệ (đã được duyệt push)
+## Rà soát toàn luồng A/B/HR (đã được duyệt push)
+
+- Đã hoàn tất bước 1 người dùng duyệt: kiểm tra luồng API/database và sửa lỗi form điểm ngoại ngữ, ngày lịch không tồn tại, chặn phản hồi tải cũ sau đổi phiên và tải lại vòng 2 theo revision.
+- Báo cáo ở `docs/WORKFLOW_REVIEW.md`; test mới `backend/tests/recruitment-flow.test.ts` đi từ nộp hồ sơ/tệp/PDF thật/ngoại lệ/vòng 1/phỏng vấn đến quyết định, quyền A/B/HR, cookie đăng xuất và stale basis.
+- 107/107 tests đạt, TypeScript/build/diff check đạt; Vite còn cảnh báo bundle lớn. Đã kiểm tra UI B → A và form IELTS/TOEIC/TOEFL, không tạo thêm hồ sơ local. README được thống nhất theo backend hiện tại, bỏ hướng dẫn tạo bảng mẫu đã lỗi thời.
+- Mốc đã push: `f999255f9f34b1a76c006bb36543f010389f9696`. Người dùng đã xem local và duyệt push phần rà soát trong commit chứa cập nhật này; kiểm tra git log/status để xác nhận. Các phần tiếp theo vẫn cần duyệt push riêng. Không thay đổi cloud/email/dự báo hoặc thêm luồng phản hồi offer.
+- Bước tiếp theo đề xuất: hoàn thiện offer/phản hồi ứng viên, sau khi giải thích phạm vi. Sau đó nối dự báo vào dữ liệu tuyển dụng backend. Giới hạn còn lại và các kiểm tra chưa thực hiện được ghi rõ trong báo cáo rà soát.
+
+## Quy tắc hiện tại: tự đối chiếu, HR chỉ xử lý ngoại lệ (đã push ở f999255)
 
 - Người dùng đã chốt bỏ bước HR xác minh mọi tệp: ngoại ngữ/thành tích khớp đầy đủ theo khai báo hiện tại tự được tính điểm; chỉ lệch/thiếu/không rõ/chưa đọc được mới chuyển HR. Quyết định nghiệp vụ này thay thế quy tắc bắt buộc review ở các mốc lịch sử bên dưới. Không gọi khớp OCR là xác thực tính thật từ đơn vị cấp.
 - Migration 8 `202610180008_evidence_exceptions.sql`, engine `local-ocr-rules-v2`. Kết quả cần snapshot tên/khai báo trùng hiện tại, đúng hash, engine mới, không partial và đủ tất cả trường khớp. Thành tích bắt buộc đối chiếu cả cấp (`level`) để tính 4/7/10 điểm. Kết quả v1 cần đọc lại, không tự nâng thành khớp v2.

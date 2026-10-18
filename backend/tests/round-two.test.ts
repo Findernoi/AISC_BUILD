@@ -56,6 +56,12 @@ test('API validation rejects forged actors, totals, missing evidence and ambiguo
   const input={kind:'schedule',expectedRevision:1,data:schedule};assert.equal(validateRoundTwo(input).kind,'schedule');
   for(const invalid of [{...input,reviewed_by:'forged'},{...input,expectedRevision:0},{...input,data:{...schedule,starts_at:'2026-10-20T09:00'}},{...input,data:{...schedule,duration_minutes:0}},{kind:'coding',expectedRevision:1,data:{score:100.01,notes:''}},{kind:'interview',expectedRevision:1,data:{...evaluation,overall_score:100}},{kind:'interview',expectedRevision:1,data:{...evaluation,evidence:{technical:'only'}}}])assert.throws(()=>validateRoundTwo(invalid));
 });
+test('schedule validation rejects impossible dates instead of normalizing them and preserves timezone instants',()=>{
+  const input={kind:'schedule',expectedRevision:1,data:schedule};
+  for(const starts_at of ['2026-02-31T09:00:00+07:00','2026-02-29T09:00:00Z','2026-04-31T09:00Z','2026-10-20T24:00Z','2026-10-20T09:60Z'])assert.throws(()=>validateRoundTwo({...input,data:{...schedule,starts_at}}));
+  const valid=validateRoundTwo({...input,data:{...schedule,starts_at:'2028-02-29T09:00:00+07:00'}});
+  assert.equal(valid.kind,'schedule');if(valid.kind==='schedule')assert.equal(valid.data.starts_at,'2028-02-29T02:00:00.000Z');
+});
 test('HTTP round-two endpoints enforce identity, validation and conflict status',async()=>{
   const app=express();app.use('/api/recruitment',express.json(),createRecruitmentRouter({local:true,database:async()=>db}));
   const server=await new Promise<Server>(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});

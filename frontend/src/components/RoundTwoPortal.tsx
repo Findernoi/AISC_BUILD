@@ -26,7 +26,7 @@ function RoundTwoDetail({application,hr,onChanged}:{application:RecruitmentAppli
     const controller=new AbortController();setReport(null);setError('');
     void recruitmentFetch(path,{signal:controller.signal}).then(r=>r.json()).then(data=>{if(!controller.signal.aborted)setReport(data.report);}).catch(e=>{if(!controller.signal.aborted)setError(e.message);});
     return()=>controller.abort();
-  },[path,version]);
+  },[path,version,application.revision]);
   const save=async(input:RoundTwoMutation)=>{
     setBusy(true);setError('');setNotice('');
     try{await recruitmentFetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});setNotice('Đã lưu vào database.');setVersion(v=>v+1);await onChanged();}
@@ -60,7 +60,7 @@ function RoundTwoDetail({application,hr,onChanged}:{application:RecruitmentAppli
       }}><h3 className="font-semibold">Phiếu phỏng vấn · 5 tiêu chí</h3><p className="text-xs text-slate-400">Thang 1–10: 1–3 chưa đáp ứng; 4–6 cơ bản; 7–8 đáp ứng rõ; 9–10 vận dụng tốt, có bằng chứng. Người ghi nhận lấy từ tài khoản HR đăng nhập.</p>
         {report.interview&&<p className="text-sm text-indigo-200">Điểm phỏng vấn do database tính: {Number(report.interview.overall_score).toFixed(2)}/100 · {new Date(report.interview.reviewed_at).toLocaleString('vi-VN')}</p>}
         <fieldset disabled={busy||!editable} className="space-y-5">{INTERVIEW_CRITERIA.map(c=><div key={c.key} className="grid gap-3 sm:grid-cols-[1fr_100px_1.3fr]"><div><p className="text-sm font-semibold">{c.label} · {c.weight}%</p><p className="mt-1 text-xs text-slate-400">{c.anchor}</p></div><Field label="Điểm 1–10"><input aria-label={`Điểm ${c.label}`} name={c.key} type="number" min={1} max={10} step="0.1" required defaultValue={report.interview?.[c.key]??''}/></Field><Field label="Bằng chứng quan sát (nội bộ)"><textarea aria-label={`Bằng chứng ${c.label}`} name={`${c.key}_evidence`} maxLength={3000} required rows={3} defaultValue={report.interview?.evidence[c.key]??''}/></Field></div>)}<button className="btn-primary">Lưu phiếu phỏng vấn</button></fieldset>
-      </form>{!editable&&<p className="text-sm text-amber-200">Hồ sơ không còn ở trạng thái phỏng vấn; chỉ được xem dữ liệu đã lưu.</p>}</>}
+      </form>{!editable&&<p className="text-sm text-amber-200">Chỉ được sửa khi hồ sơ ở giai đoạn phỏng vấn và trạng thái Đạt. Hồ sơ hiện tại chỉ được xem đánh giá đã lưu.</p>}</>}
     </div>}
   </div>;
 }

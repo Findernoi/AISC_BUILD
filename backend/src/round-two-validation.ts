@@ -19,6 +19,8 @@ export function validateRoundTwo(value:unknown):RoundTwoMutation {
     const d=object(body.data,['starts_at','duration_minutes','location','interviewer','instructions']);
     const starts_at=text(d.starts_at,40,true);
     if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/.test(starts_at)||!Number.isFinite(Date.parse(starts_at)))throw new ApiError(400,'Lịch phỏng vấn cần ngày giờ kèm múi giờ.');
+    const datePart=starts_at.slice(0,10),calendar=Date.parse(`${datePart}T00:00:00Z`);
+    if(Number(datePart.slice(0,4))<1||!Number.isFinite(calendar)||new Date(calendar).toISOString().slice(0,10)!==datePart||Number(starts_at.slice(11,13))>23||Number(starts_at.slice(14,16))>59)throw new ApiError(400,'Ngày hoặc giờ phỏng vấn không tồn tại.');
     const duration_minutes=d.duration_minutes;
     if(typeof duration_minutes!=='number'||!Number.isInteger(duration_minutes)||duration_minutes<5||duration_minutes>480)throw new ApiError(400,'Thời lượng từ 5 đến 480 phút.');
     return {expectedRevision,kind:'schedule',data:{starts_at:new Date(starts_at).toISOString(),duration_minutes,location:text(d.location,1000,true),interviewer:text(d.interviewer,160,true),instructions:text(d.instructions,5000)}};

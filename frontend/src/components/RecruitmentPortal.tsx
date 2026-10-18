@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { RecruitmentApplication, RecruitmentJob, RecruitmentSession, InterviewInvitation } from '../../../shared/recruitment';
 import { getSupabaseClient, supabase } from '../lib/supabase';
 import { Field, Panel } from './analytics/Shared';
@@ -33,24 +33,27 @@ export function RecruitmentPortal() {
   const [signUp,setSignUp]=useState(false);
   const [localIdentity,setLocalIdentity]=useState('candidate_a');
   const [gpaScale,setGpaScale]=useState('4.0');
-  const refresh=()=>{setLoading(true);setSession(null);setApplications([]);setInvitations([]);setJobs([]);setVersion(v=>v+1);};
+  const sessionEpoch=useRef(0);
+  const businessRequest=useRef<AbortController|null>(null);
+  const invalidateRequests=()=>{sessionEpoch.current++;businessRequest.current?.abort();};
+  const refresh=()=>{invalidateRequests();setLoading(true);setSession(null);setApplications([]);setInvitations([]);setJobs([]);setVersion(v=>v+1);};
   useEffect(()=>{
-    const controller=new AbortController();setLoading(true);setError('');
+    const controller=new AbortController(),epoch=sessionEpoch.current;setLoading(true);setError('');
     void (async()=>{
       const next=await api<RecruitmentSession>('session',undefined,controller.signal);
       const jobData=next.configured?await api<{jobs:RecruitmentJob[]}>('jobs',undefined,controller.signal):{jobs:[]};
       const appData=next.user?await api<{applications:RecruitmentApplication[]}>('applications',undefined,controller.signal):{applications:[]};
       const invitationData=next.user?await api<{invitations:InterviewInvitation[]}>('invitations',undefined,controller.signal):{invitations:[]};
-      if(controller.signal.aborted)return;
+      if(controller.signal.aborted||epoch!==sessionEpoch.current)return;
       setSession(next);setJobs(jobData.jobs);setApplications(appData.applications);setInvitations(invitationData.invitations);
       setJobId(current=>jobData.jobs.some(j=>j.id===current&&j.status==='active')?current:jobData.jobs.find(j=>j.status==='active')?.id??'');
-    })().catch(e=>{if(!controller.signal.aborted)setError(message(e));}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+    })().catch(e=>{if(!controller.signal.aborted&&epoch===sessionEpoch.current)setError(message(e));}).finally(()=>{if(!controller.signal.aborted&&epoch===sessionEpoch.current)setLoading(false);});
     return()=>controller.abort();
   },[version]);
   useEffect(()=>{
     // Avoid async Supabase calls inside its auth-state callback.
-    const listener=supabase?.auth.onAuthStateChange(()=>{setSession(null);setApplications([]);setInvitations([]);setJobs([]);setLoading(true);setVersion(v=>v+1);});
-    return()=>listener?.data.subscription.unsubscribe();
+    const listener=supabase?.auth.onAuthStateChange(()=>{invalidateRequests();setSession(null);setApplications([]);setInvitations([]);setJobs([]);setLoading(true);setVersion(v=>v+1);});
+    return()=>{invalidateRequests();listener?.data.subscription.unsubscribe();};
   },[]);
   const perform=async(fn:()=>Promise<void>)=>{setBusy(true);setError('');setNotice('');try{await fn();}catch(e){setError(message(e));}finally{setBusy(false);}};
   const login=(event:React.FormEvent<HTMLFormElement>)=>{
@@ -82,8 +85,14 @@ export function RecruitmentPortal() {
     void perform(async()=>{await api('jobs',{title:String(form.get('title')),department:String(form.get('department')),description:String(form.get('description')),location:String(form.get('location')),min_gpa:Number(form.get('min_gpa')),requirements:String(form.get('requirements')).split(',').map(s=>s.trim()).filter(Boolean)});setNotice('Đã tạo vị trí tuyển dụng.');refresh();});
   };
   const reloadBusiness=async()=>{
-    const [jobData,appData,invitationData]=await Promise.all([api<{jobs:RecruitmentJob[]}>('jobs'),api<{applications:RecruitmentApplication[]}>('applications'),api<{invitations:InterviewInvitation[]}>('invitations')]);
-    setJobs(jobData.jobs);setApplications(appData.applications);setInvitations(invitationData.invitations);
+    businessRequest.current?.abort();
+    const controller=new AbortController(),epoch=sessionEpoch.current;businessRequest.current=controller;
+    try{
+      const [jobData,appData,invitationData]=await Promise.all([api<{jobs:RecruitmentJob[]}>('jobs',undefined,controller.signal),api<{applications:RecruitmentApplication[]}>('applications',undefined,controller.signal),api<{invitations:InterviewInvitation[]}>('invitations',undefined,controller.signal)]);
+      if(controller.signal.aborted||epoch!==sessionEpoch.current)return;
+      setJobs(jobData.jobs);setApplications(appData.applications);setInvitations(invitationData.invitations);
+    }catch(e){if(!controller.signal.aborted&&epoch===sessionEpoch.current)throw e;}
+    finally{if(businessRequest.current===controller)businessRequest.current=null;}
   };
   const currentJob=jobs.find(j=>j.id===jobId);
   const alreadyApplied=applications.some(a=>a.job_id===jobId);
