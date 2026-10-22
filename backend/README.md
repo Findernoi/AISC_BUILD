@@ -71,6 +71,6 @@ Tính điểm và lựa chọn nằm trong RPC PostgreSQL dưới JWT người g
 
 ## Offer và phản hồi ứng viên
 
-Migration 9, API /offers và /applications/:id/offers bổ sung phát hành offer trong ứng dụng, lịch sử thay thế và phản hồi accepted/declined theo quyền chủ hồ sơ. HR không phản hồi thay ứng viên; không gửi email thật. Xem [quy tắc, API và kịch bản demo](../docs/OFFERS_DEMO.md).
+Migration 9, API /offers và /applications/:id/offers bổ sung phát hành offer trong ứng dụng, lịch sử thay thế và phản hồi accepted/declined theo quyền chủ hồ sơ. HR không phản hồi thay ứng viên; không gửi email thật.
 
-Migration 10, `GET /analytics?jobId=all&month=2026-11&asOf=2026-10-18` bổ sung báo cáo HR trên toàn bộ dữ liệu database. RPC kiểm tra HR, không trả thông tin cá nhân; tính offer mới nhất và lịch nguồn vào 6 tháng theo ngày bắt đầu, không phải dự báo nhu cầu 6 tháng. Kế hoạch frontend kết hợp nguồn vào này với giả định HR hoặc nhu cầu Ridge giả lập đúng tháng, không tự lấy số người đang làm từ accepted. Xem [hợp đồng và công thức](../docs/ANALYTICS_DEMO.md).
+Migration 10, `GET /analytics?jobId=all&month=2026-11&asOf=2026-10-18` bổ sung báo cáo HR trên toàn bộ dữ liệu database. RPC kiểm tra HR, không trả thông tin cá nhân; tính offer mới nhất và lịch nguồn vào 6 tháng theo ngày bắt đầu, không phải dự báo nhu cầu 6 tháng. Kế hoạch frontend kết hợp nguồn vào này với giả định HR hoặc nhu cầu Ridge giả lập đúng tháng, không tự lấy số người đang làm từ accepted.

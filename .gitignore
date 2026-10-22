@@ -23,3 +23,6 @@ data/*.zip
 
 # Local student research datasets are not published
 /data/Student Placement Outcomes/
+
+# Local handoff and demo notes
+/docs/

@@ -2,11 +2,11 @@
 
 ## Thống kê và kế hoạch HR (migration 10)
 
-`202610180010_recruitment_analytics.sql` bổ sung RPC chỉ đọc `recruitment_analytics(uuid,date,date)`, kiểm tra HR trong database; local tự áp dụng sau migration 9, chưa áp dụng cloud. API `GET /api/recruitment/analytics` tổng hợp toàn bộ dữ liệu trong bộ lọc, lấy offer mới nhất mỗi hồ sơ, tách pending hợp lệ/accepted/declined và phân bổ nguồn vào theo ngày bắt đầu. Accepted chưa phải đã đi làm. Giả định 75% chỉ áp dụng pending hợp lệ tương lai. Xem [hợp đồng, công thức, kịch bản và giới hạn](../../docs/ANALYTICS_DEMO.md).
+`202610180010_recruitment_analytics.sql` bổ sung RPC chỉ đọc `recruitment_analytics(uuid,date,date)`, kiểm tra HR trong database; local tự áp dụng sau migration 9, chưa áp dụng cloud. API `GET /api/recruitment/analytics` tổng hợp toàn bộ dữ liệu trong bộ lọc, lấy offer mới nhất mỗi hồ sơ, tách pending hợp lệ/accepted/declined và phân bổ nguồn vào theo ngày bắt đầu. Accepted chưa phải đã đi làm. Giả định 75% chỉ áp dụng pending hợp lệ tương lai.
 
 ## Offer trong ứng dụng (migration 9)
 
-`202610180009_offers.sql` bổ sung `recruitment_offers`, RLS đọc theo chủ hồ sơ/HR và các RPC `read_offers`, `issue_offer`, `respond_offer`. Chạy sau migration 1–8; local tự áp dụng, chưa áp dụng cloud. Thông báo trong ứng dụng, không gửi email thật. Xem [kịch bản demo, hợp đồng API, trạng thái và giới hạn](../../docs/OFFERS_DEMO.md).
+`202610180009_offers.sql` bổ sung `recruitment_offers`, RLS đọc theo chủ hồ sơ/HR và các RPC `read_offers`, `issue_offer`, `respond_offer`. Chạy sau migration 1–8; local tự áp dụng, chưa áp dụng cloud. Thông báo trong ứng dụng, không gửi email thật.
 
 HR chỉ phát hành từ quyết định hire mới nhất còn khớp căn cứ hiện tại; expectedDecisionId/expectedBasis/expectedOfferId chặn dữ liệu cũ và ghi đè offer pending ngoài ý muốn. Phát hành lại giữ bản cũ superseded; decision mới cũng supersede pending. Ứng viên chỉ phản hồi offer của mình một lần với revision hiện tại, pending còn hiệu lực, app offer/passed và vị trí đang mở. accepted chuyển app accepted/passed; declined chuyển withdrawn/rejected nhưng vẫn lưu riêng ở offer. Đây là đồng ý nhận đề nghị, chưa xác nhận đã bắt đầu làm việc. Lưu phản hồi/trạng thái cùng transaction và dùng advisory lock; raw authenticated writes bị chặn, audit ghi actor/thời điểm.
 

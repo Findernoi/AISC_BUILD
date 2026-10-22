@@ -34,13 +34,13 @@ Vòng 1 xếp trên toàn bộ hồ sơ trong bộ lọc rồi giới hạn 200 
 
 ## Offer và phản hồi trong demo
 
-Sau quyết định chọn tuyển, HR nhập vị trí, ngày bắt đầu dự kiến và nội dung trong **Offer và phản hồi ứng viên**. Ứng viên xem offer riêng và phản hồi trong **Thông báo offer của tôi**. Chấp nhận chuyển hồ sơ sang accepted/passed, từ chối sang withdrawn/rejected; bảng offer giữ trạng thái declined để phân biệt với HR không chọn. Chấp nhận đề nghị chưa phải đã bắt đầu làm việc. Bản thay thế/đã phản hồi/căn cứ lỗi thời không được phản hồi. Xem [kịch bản demo, quy tắc và API](docs/OFFERS_DEMO.md).
+Sau quyết định chọn tuyển, HR nhập vị trí, ngày bắt đầu dự kiến và nội dung trong **Offer và phản hồi ứng viên**. Ứng viên xem offer riêng và phản hồi trong **Thông báo offer của tôi**. Chấp nhận chuyển hồ sơ sang accepted/passed, từ chối sang withdrawn/rejected; bảng offer giữ trạng thái declined để phân biệt với HR không chọn. Chấp nhận đề nghị chưa phải đã bắt đầu làm việc. Bản thay thế/đã phản hồi/căn cứ lỗi thời không được phản hồi.
 
 ## Thống kê và kế hoạch nhân sự
 
 HR mở **Thống kê tuyển dụng · Database**, chọn vị trí, tháng và ngày tính nguồn vào. Tổng tính toàn bộ database trong phạm vi lọc, tách offer chờ hợp lệ/đã nhận/từ chối; chỉ offer mới nhất mỗi hồ sơ được tính. Lịch 6 tháng lấy ngày bắt đầu trên offer, không phải dự báo nhu cầu 6 tháng. Đã nhận offer chưa phải đã đi làm.
 
-Chọn một vị trí để nhập nhu cầu, số đang thực sự làm và số dự kiến kết thúc; bỏ trống không được coi là 0. Nguồn vào gồm offer đã nhận chưa qua ngày bắt đầu và kịch bản thêm offer chờ × 75%. Ridge chỉ so sánh nhu cầu từ kịch bản giả lập đã chọn rõ, đúng tháng 10/2026; không tự ánh xạ vị trí database hay lấy nhân sự giả lập. Xem [công thức, API và kịch bản kiểm tra](docs/ANALYTICS_DEMO.md).
+Chọn một vị trí để nhập nhu cầu, số đang thực sự làm và số dự kiến kết thúc; bỏ trống không được coi là 0. Nguồn vào gồm offer đã nhận chưa qua ngày bắt đầu và kịch bản thêm offer chờ × 75%. Ridge chỉ so sánh nhu cầu từ kịch bản giả lập đã chọn rõ, đúng tháng 10/2026; không tự ánh xạ vị trí database hay lấy nhân sự giả lập.
 
 ## Kiểm tra toàn luồng
 
@@ -71,7 +71,7 @@ npm start
 
 ## Demo frontend cũ và dự báo
 
-`npm run dev:recruitment` vẫn cho mở trang gốc và chọn **Khám phá bản demo frontend**. Demo lưu hồ sơ trong localStorage, tệp trong IndexedDB; không tự chuyển sang database. Luồng duyệt minh chứng/mô phỏng email cũ chỉ thuộc demo, không thay thế cổng ứng tuyển mới. Xem [hướng dẫn demo](docs/frontend-demo.md).
+`npm run dev:recruitment` vẫn cho mở trang gốc và chọn **Khám phá bản demo frontend**. Demo lưu hồ sơ trong localStorage, tệp trong IndexedDB; không tự chuyển sang database. Luồng duyệt minh chứng/mô phỏng email cũ chỉ thuộc demo, không thay thế cổng ứng tuyển mới.
 
 Placement dùng Logistic Regression từ Campus Recruitment, chỉ GPA và số dự án; không hỏi số lần thực tập. GPA thang 4 nhân 2.5 là giả định, thiếu số dự án dùng median train và cảnh báo. Dataset ngoài UIT, chưa kiểm định tại UIT. Xác suất placement không tham gia điểm vòng 1/top 10/quyết định.
 
@@ -103,7 +103,6 @@ shared/     Hợp đồng API/type tuyển dụng
 scripts/    Tiện ích build và runtime
 ml/         Huấn luyện/export model offline
 data/       CSV nguồn và dữ liệu giả lập
-docs/       Bàn giao, hướng dẫn và rà soát toàn luồng
 ```
 
-`npm run dev:database` riêng là fixture trong bộ nhớ cho bản xem schema/RLS, tạo lại khi restart; không thay thế database bền của `dev:recruitment`. Xem [bàn giao](docs/HANDOFF.md) để tiếp tục công việc và xác nhận lại `git status` trước khi sửa. Chỉ push sau khi người dùng duyệt phần thay đổi cụ thể.
+`npm run dev:database` riêng là fixture trong bộ nhớ cho bản xem schema/RLS, tạo lại khi restart; không thay thế database bền của `dev:recruitment`.
